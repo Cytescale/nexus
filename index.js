@@ -378,6 +378,13 @@ class server_entry{
       res.send(sendAdminPanel()).status(200).end();
       next();
     });
+
+    router.get('/api/',async(req,res,next)=>{
+
+
+      next();
+    });
+
     router.get('/api/delRelationData',async(req,res,next)=>{
       TOTAL_REQUEST_COUNT++;
       let from_uid=req.body.from_uid;
