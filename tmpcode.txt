@@ -1,0 +1,132 @@
+var SERVER_PASS = 0;
+var SUCCESS_PASS = 0;
+var FAILURE_PASS = 0;
+var MAX_COUNT  = 86400;
+var CHANNEL_NAMES = [];
+var CURR_CURRENT_COUNT = 0;
+const key = '9f2685c8381b4d699f42e921789527e9'
+const secret = '3c8cae61e7204907b1b732e15b547a97'
+const EncodeData = Buffer.from(`${key}:${secret}`, 'utf8').toString('base64'); 
+
+ JOB = new CronJob('* * * * * *',
+ ()=>{
+  this.getChannelStatus(this.setTotalListnerCount);
+  this.getChannelList();
+ },this.onComplete);
+
+
+
+    this.getChannelStatus = this.getChannelStatus.bind(this);
+     this.getChannelList = this.getChannelList.bind(this);
+     this.parseData = this.parseData.bind(this);
+     
+
+
+ // if(admin.apps.length>0){
+      //     var db = admin.database();
+      //     var ref = db.ref("user_space_det");
+      //     ref.on("value", function(snapshot) {
+      //       var parsedata = snapshot.val();
+      //       for (const data in parsedata) {
+      //         let obj =  parsedata[data];
+      //         let found = false;  
+      //         CHANNEL_NAMES.forEach((e,ind)=>{
+      //             if(e === obj.agora_channel_name){found=true;return;}
+      //           });
+      //         if(found===false){
+      //           console.log("Channel inserted "+obj.agora_channel_name);
+      //           CHANNEL_NAMES.push([data,obj.agora_channel_name]);
+      //         }
+      //       }
+      //     });
+      // }
+
+  async parseData(parsedata){
+    for (const data in parsedata) {
+      let obj =  parsedata[data];
+      let found = false;  
+      CHANNEL_NAMES.forEach((e,ind)=>{
+          if(e === obj.channel_name){found=true;return;}
+        });
+      if(found===false){
+        console.log("Channel inserted "+obj.channel_name);
+        CHANNEL_NAMES.push(obj.channel_name);
+      }
+    }
+  }
+
+  async setTotalListnerCount(chnl_id,count,broadcaster){
+      console.log("agoraPlayer: set count for"+chnl_id);
+      var database = admin.database();;
+      var spaceRef = database.ref('user_space_det').child(chnl_id).update({
+       listner:count,
+       broadcaster:broadcaster
+      });
+  }
+  
+  async onComplete(){
+       console.log("On complete");
+  }
+  
+  async initServerLoop(app){
+          console.log("scheduler process init");
+          try{
+               this.JOB.start();
+               this.JOB.addCallback(()=>{
+                    if(SERVER_PASS>=MAX_COUNT){
+                         this.JOB.stop();
+                         console.log("Server loop ended");
+                    }
+               })
+          }
+          catch(e){
+               throw(new Error("Error Ouccred at scheduling "+e));
+               exit(1);
+          }
+  }
+  async getChannelList(){
+    console.log("Data data for pass"+SERVER_PASS);
+    axios.get(`https://api.agora.io/dev/v1/channel/d95380ef73954640840d0b042d9e128d`,{
+     headers: {
+       'Content-Type': 'application/json',
+       'Authorization': `Basic ${EncodeData}` 
+     },
+    }).then((res)=>{
+       console.log(`Channel stat: RESPONSE FOR PASS`+JSON.stringify(res.data));
+    }).catch((e)=>{
+      console.log("Request error occured"+e);
+    });
+
+}
+
+  async getChannelStatus(setListnerCount){
+     console.log("Data channel user data init "+SERVER_PASS);
+     if(CHANNEL_NAMES.length){
+     const tmpServePass  = SERVER_PASS;
+     const tmpUpdateId = CURR_CURRENT_COUNT;
+     axios.get(`https://api.agora.io/dev/v1/channel/user/d95380ef73954640840d0b042d9e128d/${CHANNEL_NAMES[tmpUpdateId][1]}`,{
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Basic ${EncodeData}` 
+      },
+     }).then((res)=>{
+        console.log(`User stat: CHANNEL INDEX ${tmpUpdateId} RESPONSE FOR PASS ${tmpServePass}`+JSON.stringify(res.data));
+        if(res.data.data.channel_exist){
+          let count = res.data.data.broadcasters.length + res.data.data.audience.length;
+          setListnerCount(CHANNEL_NAMES[tmpUpdateId][0],count,res.data.data.broadcasters);
+        }
+        else{
+          setListnerCount(CHANNEL_NAMES[tmpUpdateId][0],0,[]);
+        }
+        SUCCESS_PASS++;
+     }).catch((e)=>{
+       console.log("Request error occured"+e);
+       FAILURE_PASS++;
+     });
+      //if(CURR_CURRENT_COUNT>=(CHANNEL_NAMES.length)){CURR_CURRENT_COUNT=0;}
+      if(CHANNEL_NAMES.length){
+        CURR_CURRENT_COUNT = ((CURR_CURRENT_COUNT + 1 )%CHANNEL_NAMES.length);
+      }
+     SERVER_PASS++;
+    }
+}
