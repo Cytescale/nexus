@@ -17,6 +17,7 @@ const MongoClient =                 require('mongodb').MongoClient;
 const bodyParser =                  require('body-parser')
 const multer =                      require('multer') 
 var log4js =                        require("log4js");
+const { exec } =                    require("child_process");
 
 
 log4js.configure({
@@ -403,8 +404,21 @@ class server_entry{
 
     router.post('/api/gitUpdate',async(req,res,next)=>{
       console.log("Git update pushed");
-      shell_exec( `cd /home/ubuntu/nexus/ && git reset –hard HEAD && git pull && pm2 restart nexus`);
-      res.send('Update received').status(200).end();
+      exec("cd /home/ubuntu/nexus/ && git reset –hard HEAD && git pull && pm2 restart nexus", (error, stdout, stderr) => {
+        if (error) {
+          res.send('Error occured while building'+error.message).status(200).end();  
+          console.log(`error: ${error.message}`);
+            return;
+        }
+        if (stderr) {
+          res.send('Error occured while building'+sterr).status(200).end();  
+            console.log(`stderr: ${stderr}`);
+            return;
+        }
+        console.log(`stdout: ${stdout}`);
+        res.send('Sucessfully rebuild nexus server'+stdout).status(200).end();  
+      });
+      
       next();
     });
 
