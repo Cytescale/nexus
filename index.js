@@ -403,6 +403,8 @@ class server_entry{
 
     router.post('/api/gitUpdate',async(req,res,next)=>{
       console.log("Git update pushed");
+      shell_exec( `cd /home/ubuntu/nexus/ && git reset –hard HEAD && git pull && pm2 restart nexus`);
+      res.send('Update received').status(200).end();
       next();
     });
 
