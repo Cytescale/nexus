@@ -21,7 +21,9 @@ const nexusResponse =               require("./utils/resonseComposite");
 const DbClusterHelper =             require("./api/helpers/dbClusterHelper");
 const FirebaseHelper =              require("./api/helpers/firebaseHelper");
 const {mongo_uri} =                       require("./certs/mongo_connect_cert");
-
+/**
+ *
+ */
 
 log4js.configure({
   appenders: { everything: { type: 'file',filename: "./logs/overall_server_1.log" } },
