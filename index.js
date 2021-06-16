@@ -63,7 +63,7 @@ const client = new MongoClient(mongo_uri,
   
 
   /*/////////////SERVER DATA VARS ////////////*/
-const SERVER_VERSION = "0.0.5";
+const SERVER_VERSION = "0.0.56";
 var TOTAL_REQUEST_COUNT = 0;
 var TOTAL_SUCESS_PASS = 0;
 var TOTAL_FAILUER_PASS = 0;
