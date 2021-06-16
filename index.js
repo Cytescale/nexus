@@ -67,7 +67,7 @@ var TOTAL_SUCESS_PASS = 0;
 var TOTAL_FAILUER_PASS = 0;
 
 
-var SERVER_VERSION = "0.0.1";
+var SERVER_VERSION = "0.0.2";
 
 let allowedRoutes = {
   delRelationData:true,
