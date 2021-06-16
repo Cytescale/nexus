@@ -404,21 +404,23 @@ class server_entry{
 
     router.post('/api/gitUpdate',async(req,res,next)=>{
       console.log("Git update pushed");
+      let server_respon = null;
       exec("cd /home/ubuntu/nexus/ && git reset –hard HEAD && git pull && pm2 restart nexus", (error, stdout, stderr) => {
         if (error) {
-          res.send('Error occured while building'+error.message).status(200).end();  
+          server_respon = error.message; 
           console.log(`error: ${error.message}`);
             return;
         }
         if (stderr) {
-          res.send('Error occured while building'+sterr).status(200).end();  
-            console.log(`stderr: ${stderr}`);
+          server_respon = sterr;
+          console.log(`stderr: ${stderr}`);
             return;
         }
         console.log(`stdout: ${stdout}`);
-        res.send('Sucessfully rebuild nexus server'+stdout).status(200).end();  
+        server_respon = stdout;
       });
-      
+      console.log(`Project rebuild result`+server_respon);;
+      res.send('Project rebuild response'+server_respon).status(200).end();
       next();
     });
 
