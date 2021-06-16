@@ -405,7 +405,7 @@ class server_entry{
     router.post('/api/gitUpdate',async(req,res,next)=>{
       console.log("Git update pushed");
       let server_respon = null;
-      exec("cd /home/ubuntu/nexus/ && git stash && git pull && pm2 restart nexus", (error, stdout, stderr) => {
+      exec("node serverUpdate.js", (error, stdout, stderr) => {
         if (error) {
           server_respon = error.message; 
           console.log(`error: ${error.message}`);
