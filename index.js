@@ -62,8 +62,9 @@ const client = new MongoClient(mongo_uri,
    { keepAlive: 1});
   
 
-  /*/////////////SERVER DATA VARS ////////////*/
+  /*/////////////SERVER VARS ////////////*/
 const SERVER_VERSION = "0.0.56";
+var SERVER_STATUS = "RUNNING";
 var TOTAL_REQUEST_COUNT = 0;
 var TOTAL_SUCESS_PASS = 0;
 var TOTAL_FAILUER_PASS = 0;
@@ -115,7 +116,7 @@ class server_entry{
 
   initRoutes(){
     router.get('/',(req,res,next)=>{
-      res.send(`<h3><bold>Hey There👋<br/>Version: ${SERVER_VERSION}</bold></h3>`).status(200).end();
+      res.send(`<h3><bold>Hey There👋<br/>Version: ${SERVER_VERSION}  <div>SERVER STATUS: ${SERVER_STATUS}</div></bold></h3>`).status(200).end();
       next();
     })
     router.use(bodyParser.json())
@@ -127,6 +128,7 @@ class server_entry{
     });
     router.post('/api/gitUpdate',async(req,res,next)=>{
       console.log("Git update pushed");
+      SERVER_STATUS = "REBUILDING";
       let server_respon = null;
       exec(`eval "$(ssh-agent -s)" && ssh-add ~/.ssh/gitkey && cd /home/ubuntu/nexus/ && git stash && git pull && pm2 restart nexus`, (error, stdout, stderr) => {
         if (error) {
@@ -327,8 +329,9 @@ class server_entry{
     firebaseHelper.firebaseInit();
     app.listen(port,() => {
       logger.debug('Server Running on port'+port);
-      console.log('Server Running on port'+port);}  
-      );
+      console.log('Server Running on port'+port);
+      SERVER_STATUS = "RUNNING";
+    });
       
       
     this.initMongoConnec().then(res=>{
@@ -419,6 +422,7 @@ function sendAdminPanel(){
       <body id='l-bdy'>
       <div id='l-head'>Nexus Logs Panel</div>
          <embed  src='./server2.log' id='l-log-bdy'/>
+        
       </body>
      
     </html>
