@@ -22,7 +22,7 @@ const DbClusterHelper =             require("./api/helpers/dbClusterHelper");
 const FirebaseHelper =              require("./api/helpers/firebaseHelper");
 const {mongo_uri} =                       require("./certs/mongo_connect_cert");
 /**
- *
+ ma
  */
 
 log4js.configure({
