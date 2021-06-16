@@ -66,6 +66,8 @@ var TOTAL_SUCESS_PASS = 0;
 var TOTAL_FAILUER_PASS = 0;
 
 
+var SERVER_VERSION = "0.0.1";
+
 let allowedRoutes = {
   delRelationData:true,
   makeRelationData:true,
@@ -76,6 +78,26 @@ let allowedRoutes = {
 }
 
 
+/*
+
+agora_channel_exp_time: 
+1626250571
+agora_channel_name: 
+"channeluyhMSSLyPI"
+agora_channel_token: 
+"006d95380ef73954640840d0b042d9e128dIADol1YYClXV..."
+des: 
+"Sample description"
+listner: 
+0
+name: 
+"nikhil space"
+public_visi: 
+true
+uid: 
+"CvTBt6cgZCOwtKhQFgC3BdoIanS2"
+
+*/
    
 class DbClusterHelper{
   static client = null;
@@ -368,7 +390,7 @@ class server_entry{
 
   initRoutes(){
     router.get('/',(req,res,next)=>{
-      res.send('<h3><bold>Hey There👋</bold></h3>').status(200).end();
+      res.send(`<h3><bold>Hey There👋<br/>Version: ${SERVER_VERSION}</bold></h3>`).status(200).end();
       next();
     })
     router.use(bodyParser.json())
@@ -379,9 +401,8 @@ class server_entry{
       next();
     });
 
-    router.get('/api/',async(req,res,next)=>{
-
-
+    router.post('/api/gitUpdate',async(req,res,next)=>{
+      console.log("Git update pushed");
       next();
     });
 
