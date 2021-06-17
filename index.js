@@ -9,6 +9,7 @@ const e =                           require('cors');
 const CronJob =                     require('cron').CronJob;
 const { exit } =                    require('process');
 const axios =                       require('axios').default;
+const ImageKit =                    require('imagekit');
 const dotenv =                      require("dotenv");
 const MongoClient =                 require('mongodb').MongoClient;
 const bodyParser =                  require('body-parser')
@@ -16,14 +17,19 @@ const multer =                      require('multer')
 const log4js =                      require("log4js");
 const { exec } =                    require("child_process");
 const rateLimit =                   require("express-rate-limit");
-
 const nexusResponse =               require("./utils/resonseComposite");
 const DbClusterHelper =             require("./api/helpers/dbClusterHelper");
 const FirebaseHelper =              require("./api/helpers/firebaseHelper");
-const {mongo_uri} =                       require("./certs/mongo_connect_cert");
-/**
- ma
- */
+const {mongo_uri} =                 require("./certs/mongo_connect_cert");
+const imageKitCert =                require("./certs/imagekey_cert.json");
+const compression =                 require('compression')
+
+
+const imagekit = new ImageKit({
+  urlEndpoint: "https://ik.imagekit.io/cyte",
+  publicKey: 'public_/DkOKC6N0KqktP0jSpjDTtKpiTA=',
+  privateKey: 'private_LgxIx1g7AY/LeX7jtJBlh1Pmis8='
+});  
 
 log4js.configure({
   appenders: { everything: { type: 'file',filename: "./logs/overall_server_1.log" } },
@@ -84,6 +90,7 @@ let allowedRoutes = {
   
   getFollowCount:true,
   getSpaceDatabySid:true,
+  getSpaceFeedData:true,
   getRelationData:true,
   getUserDatabyUid:true,
   getUserDatabyJid:true,
@@ -109,7 +116,7 @@ class server_entry{
     }
     catch(e){
       console.error("Fatal Error: mongo connect failure"+e);
-      exit(0);
+      SERVER_STATUS = "INTERUPTED";
       return false;
     }
   }
@@ -166,6 +173,11 @@ class server_entry{
       res.send(serverReponse).status(200).end();
       next();
     })
+    router.get('/api/imageKitAuth',async(req,res,next)=>{
+      var result = imagekit.getAuthenticationParameters();
+      res.send(result).status(200).end();
+      next();
+    });
     router.get('/api/getSpaceDatabySid',async (req,res,next)=>{
       TOTAL_REQUEST_COUNT++;
       let uid=req.body.uid;
@@ -181,6 +193,22 @@ class server_entry{
             serverReponse.errBool?TOTAL_FAILUER_PASS++:TOTAL_SUCESS_PASS++;
             res.send(serverReponse).status(200).end();
             next();
+    })
+    
+    router.get('/api/getSpaceFeedData',async (req,res,next)=>{
+      TOTAL_REQUEST_COUNT++;
+      let uid=req.body.uid;
+      let serverReponse = null;
+      if(allowedRoutes.getSpaceFeedData){
+      if(uid){
+        let resData = await dbClusterHelper.getSpaceFeedData(uid);
+        if(!resData.errBool){serverReponse = new nexusResponse(0,false,null,resData.responseData);}
+        else{serverReponse = new nexusResponse(10,true,resData.errMess,null);}}
+        else{serverReponse = new nexusResponse(2,true,'Missing Data',null);}}
+        else{serverReponse = new nexusResponse(1,true,'Route is closed',null);}
+        serverReponse.errBool?TOTAL_FAILUER_PASS++:TOTAL_SUCESS_PASS++;
+        res.send(serverReponse).status(200).end();
+         next();
     })
     router.get('/api/makeSpaceData',async(req,res,next)=>{
       TOTAL_REQUEST_COUNT++;
@@ -302,6 +330,7 @@ class server_entry{
       res.send(serverReponse).status(200).end();
       next();
     })
+    
     router.get('/api/getUserDatabyJid',async (req,res,next)=>{
       TOTAL_REQUEST_COUNT++;
       let jid=req.body.jid;
@@ -310,14 +339,12 @@ class server_entry{
       if(jid){
         let resData = await dbClusterHelper.getUserDatabyJid(jid);
         if(!resData.errBool){serverReponse = new nexusResponse(0,false,null,resData.responseData);}
-        else{serverReponse = new nexusResponse(10,true,resData.errMess,null);}
-        }
-        else{serverReponse = new nexusResponse(2,true,'Missing Data',null);}    
-       }
-       else{serverReponse = new nexusResponse(1,true,'Route is closed',null);}
-      serverReponse.errBool?TOTAL_FAILUER_PASS++:TOTAL_SUCESS_PASS++;
-      res.send(serverReponse).status(200).end();
-      next();
+        else{serverReponse = new nexusResponse(10,true,resData.errMess,null);}}
+        else{serverReponse = new nexusResponse(2,true,'Missing Data',null);}}
+        else{serverReponse = new nexusResponse(1,true,'Route is closed',null);}
+        serverReponse.errBool?TOTAL_FAILUER_PASS++:TOTAL_SUCESS_PASS++;
+        res.send(serverReponse).status(200).end();
+         next();
     })
 
   }
@@ -326,6 +353,7 @@ class server_entry{
     app.use(express.static(__dirname));
     app.use(cors());
     app.use(router);
+    app.use(compression())
     firebaseHelper.firebaseInit();
     app.listen(port,() => {
       logger.debug('Server Running on port'+port);

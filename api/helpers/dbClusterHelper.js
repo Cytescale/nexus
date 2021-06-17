@@ -45,6 +45,31 @@ module.exports = class DbClusterHelper{
           }
         return helperReponse;
      }
+     async getSpaceFeedData(got_uid){
+          let helperReponse = null;
+          try{
+                    if(got_uid){
+                         const collection = this.getClient().db('central_db').collection("user_space_collec").find(); 
+                         let data = await collection.toArray();
+                         if(data.length>0)
+                         {
+                              let tempFeedData = [];
+                              await collection.forEach(e => {
+                                   if(!e.ban_bool  && !e.deleted_bool){
+                                        tempFeedData.push(e);
+                                   }
+                              });
+                              helperReponse = new nexusResponse(0,false,null,tempFeedData,{funcName:'getSpaceFeedData',logMess:'data extraction sucess'});
+                         }
+                         else{throw new Error('No data');}
+                    }
+                    else{throw new Error('No uid');}
+          }
+          catch(e){
+               helperReponse = new nexusResponse(1,true,e.message,null,{funcName:'getSpaceFeedData',logMess:'data extraction failure'});
+          }
+          return helperReponse;
+     }
      async makeSpaceData(got_uid,got_data){
           let helperReponse = null;
           try{  
