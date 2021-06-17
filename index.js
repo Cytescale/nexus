@@ -68,7 +68,7 @@ const client = new MongoClient(mongo_uri,
    { keepAlive: 1});
   
 
-  /*/////////////SERVER VARS ////////////*/
+  /*/////////////SERVER VARSs ////////////*/
 const SERVER_VERSION = "0.0.56";
 var SERVER_STATUS = "RUNNING";
 var TOTAL_REQUEST_COUNT = 0;
