@@ -137,7 +137,13 @@ class server_entry{
       console.log("Git update pushed");
       SERVER_STATUS = "REBUILDING";
       let server_respon = null;
-      exec(`eval "$(ssh-agent -s)" && ssh-add ~/.ssh/gitkey && cd /home/ubuntu/nexus/ && git stash && git pull && pm2 restart nexus`, (error, stdout, stderr) => {
+      exec(`
+      eval "$(ssh-agent -s)" && 
+      ssh-add ~/.ssh/gitkey && 
+      cd /home/ubuntu/nexus/ && 
+      git stash && git pull &&
+      npm install &&
+      pm2 restart nexus`, (error, stdout, stderr) => {
         if (error) {
           server_respon = error.message; 
           console.log(`error: ${error.message}`);
