@@ -5,7 +5,6 @@ const express =                     require('express');
 const fs =                          require('fs');
 const app =                         express();
 const { request } =                 require('http');
-const e =                           require('cors');
 const CronJob =                     require('cron').CronJob;
 const { exit } =                    require('process');
 const axios =                       require('axios').default;
@@ -101,6 +100,12 @@ let allowedRoutes = {
 var dbClusterHelper =  new DbClusterHelper(client,logger);
 var firebaseHelper =  new FirebaseHelper(logger);
 
+
+var corsOptions = {
+  optionsSuccessStatus: 200 ,
+  preflightContinue: false,
+}
+
 class server_entry{
   constructor(){
      
@@ -122,17 +127,17 @@ class server_entry{
   }
 
   initRoutes(){
+    router.use('/api/',limiter);
     router.get('/',(req,res,next)=>{
       res.send(`<h3><bold>Hey There👋<br/>Version: ${SERVER_VERSION}  <div>SERVER STATUS: ${SERVER_STATUS}</div></bold></h3>`).status(200).end();
       next();
     })
-    router.use(bodyParser.json())
-    router.use(bodyParser.urlencoded({ extended: true })) 
-    router.use('/api/',limiter);
+
     router.get('/logs',async(req,res,next)=>{
       res.send(sendAdminPanel()).status(200).end();
       next();
     });
+
     router.post('/api/gitUpdate',async(req,res,next)=>{
       console.log("Git update pushed");
       SERVER_STATUS = "REBUILDING";
@@ -200,8 +205,7 @@ class server_entry{
             res.send(serverReponse).status(200).end();
             next();
     })
-    
-    router.get('/api/getSpaceFeedData',async (req,res,next)=>{
+    router.post('/api/getSpaceFeedData',async (req,res,next)=>{
       TOTAL_REQUEST_COUNT++;
       let uid=req.body.uid;
       let serverReponse = null;
@@ -319,7 +323,7 @@ class server_entry{
       res.send(serverReponse).status(200).end();
       next();
     })
-    router.get('/api/getUserDatabyUid',async (req,res,next)=>{
+    router.post('/api/getUserDatabyUid',async (req,res,next)=>{
       TOTAL_REQUEST_COUNT++;
       let serverReponse = null;
       let uid=req.body.uid;
@@ -336,8 +340,7 @@ class server_entry{
       res.send(serverReponse).status(200).end();
       next();
     })
-    
-    router.get('/api/getUserDatabyJid',async (req,res,next)=>{
+    router.post('/api/getUserDatabyJid',async (req,res,next)=>{
       TOTAL_REQUEST_COUNT++;
       let jid=req.body.jid;
       let serverReponse = null;
@@ -352,22 +355,24 @@ class server_entry{
         res.send(serverReponse).status(200).end();
          next();
     })
-
+    
+  
   }
 
   init(){
     app.use(express.static(__dirname));
-    app.use(cors());
+    app.use(cors(corsOptions));
+    app.use(bodyParser.json())
+    app.use(bodyParser.urlencoded({ extended: true })) 
     app.use(router);
     app.use(compression())
+
     firebaseHelper.firebaseInit();
     app.listen(port,() => {
       logger.debug('Server Running on port'+port);
       console.log('Server Running on port'+port);
       SERVER_STATUS = "RUNNING";
     });
-      
-      
     this.initMongoConnec().then(res=>{
       if(res){
         logger.debug(`connected successfully to mongodb`);
