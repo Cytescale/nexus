@@ -18,6 +18,7 @@ const { exec } =                    require("child_process");
 const rateLimit =                   require("express-rate-limit");
 const nexusResponse =               require("./utils/resonseComposite");
 const DbClusterHelper =             require("./api/helpers/dbClusterHelper");
+const RtcCron =                     require('./api/helpers/rtcCron');
 const FirebaseHelper =              require("./api/helpers/firebaseHelper");
 const {mongo_uri} =                 require("./certs/mongo_connect_cert");
 const imageKitCert =                require("./certs/imagekey_cert.json");
@@ -68,7 +69,7 @@ const client = new MongoClient(mongo_uri,
   
 
   /*/////////////SERVER VARSs ////////////*/
-const SERVER_VERSION = "0.0.56";
+const SERVER_VERSION = "0.0.6";
 var SERVER_STATUS = "RUNNING";
 var TOTAL_REQUEST_COUNT = 0;
 var TOTAL_SUCESS_PASS = 0;
@@ -99,7 +100,7 @@ let allowedRoutes = {
   
 var dbClusterHelper =  new DbClusterHelper(client,logger);
 var firebaseHelper =  new FirebaseHelper(logger);
-
+var rtcCron =         new RtcCron(logger,dbClusterHelper);
 
 var corsOptions = {
   optionsSuccessStatus: 200 ,
@@ -189,7 +190,7 @@ class server_entry{
       res.send(result).status(200).end();
       next();
     });
-    router.get('/api/getSpaceDatabySid',async (req,res,next)=>{
+    router.post('/api/getSpaceDatabySid',async (req,res,next)=>{
       TOTAL_REQUEST_COUNT++;
       let uid=req.body.uid;
       let sid=req.body.sid
@@ -377,6 +378,7 @@ class server_entry{
       if(res){
         logger.debug(`connected successfully to mongodb`);
         this.initRoutes();
+        rtcCron.intiCronJob();
       }
     });  
   }

@@ -6,6 +6,7 @@ const randomstring =                   require("randomstring");
 const nexusResponse =                  require("../../utils/resonseComposite");
 
 
+
 const appID = 'd95380ef73954640840d0b042d9e128d';
 const appCertificate = '9be93592e761407daa9e7bb45c2d39d6';
 const role = RtcRole.PUBLISHER;
@@ -16,13 +17,30 @@ const privilegeExpiredTs = currentTimestamp + expirationTimeInSeconds
 
 module.exports = class DbClusterHelper{
      static client = null;
+     changeStream  =null;
      logger = null;
      constructor(client,logger){
        DbClusterHelper.client = client;
-     this.logger = logger;
+       this.logger = logger;
      }
      getClient(){return DbClusterHelper.client;}
    
+     async watchSpaceData(updateSpaceCronData){
+          console.log('Watching space data changes');
+          const collection = this.getClient().db('central_db').collection("user_space_collec");
+          this.changeStream = collection.watch();
+          this.changeStream.on("change", next => {
+               if(next.operationType == 'update'){
+                    if(next.updateDescription.updatedFields.deleted_bool!=undefined || next.updateDescription.updatedFields.ban_bool!=undefined){
+                         updateSpaceCronData();
+                    }
+               }
+               if(next.operationType == 'insert'|| next.operationType == 'delete'){
+                    updateSpaceCronData();
+               }
+          });
+     }
+
      async getSpaceDatabySid(got_uid,got_sid){
      let helperReponse = null;
      try{  
@@ -44,6 +62,20 @@ module.exports = class DbClusterHelper{
           helperReponse = new nexusResponse(1,true,e.message,null,{funcName:'getSpaceDatabySid',logMess:'data extraction failure'});
           }
         return helperReponse;
+     }
+     async getRawSpaceFeedData(){
+          const collection = this.getClient().db('central_db').collection("user_space_collec").find(); 
+          let data = await collection.toArray();
+          let tempFeedData = [];
+          if(data.length>0)
+          {
+               await collection.forEach(e => {
+                    if(!e.ban_bool  && !e.deleted_bool){
+                         tempFeedData.push(e);
+                    }
+               });
+          }
+          return tempFeedData;
      }
      async getSpaceFeedData(got_uid){
           let helperReponse = null;
@@ -99,6 +131,13 @@ module.exports = class DbClusterHelper{
           }
           return helperReponse;
      }
+
+     async updateSpaceDatabyCron(channel_name,listners,broadcasters){
+          const filter = { "agora_channel_name":channel_name};
+          const updateDocument = {$set: {'listners':listners,'broadcaster':broadcasters}};
+          this.getClient().db('central_db').collection("user_space_collec").updateOne(filter,updateDocument);                
+     }
+
      async updateSpaceData(got_uid,got_sid,got_data){
           let helperReponse = null;
           try{  
