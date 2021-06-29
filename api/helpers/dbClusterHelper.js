@@ -131,6 +131,59 @@ module.exports = class DbClusterHelper{
           }
           return helperReponse;
      }
+     
+     async makeLinkData(got_uid,got_data){
+          let helperReponse = null;
+          try{  
+               const unique_identifier = randomstring.generate({length: 5,charset: 'alphabetic'});
+         if(this.getClient()){
+             if(got_uid && got_data){
+                    got_data.creation_timestamp  = Date.now();
+                    got_data.update_timestamp  = Date.now();
+                    got_data.unique_identifier  = unique_identifier;
+
+
+                     const collection = this.getClient().db('central_db').collection("link_collec"); 
+                     let result = await collection.insertOne(got_data);
+                       if(result.insertedCount==1){
+                         this.logger.debug(`createLink: link created with unique identifier `+unique_identifier);
+                         helperReponse = new nexusResponse(0,false,null,{linkCreated:true,unique_identifier:unique_identifier},{funcName:'makeLinkData',logMess:'data make success with unique id'+unique_identifier});
+                     }
+                    else{throw new Error('data insert failure');}
+                    }else{throw new Error('Missing uid|data')}
+                    }else{throw new Error('No client')}
+          }
+          catch(e){
+                    helperReponse = new nexusResponse(1,true,e.message,null,{funcName:'makeLinkData',logMess:'data make failure'});
+          }
+          return helperReponse;
+     }
+
+     async getLinksData(got_uid){
+          let helperReponse = null;
+          try{
+                    if(got_uid){
+                         const collection = this.getClient().db('central_db').collection("link_collec").find({'creator_id':got_uid}); 
+                         let data = await collection.toArray();
+                         if(data.length>0)
+                         {
+                              let tempFeedData = [];
+                              await collection.forEach(e => {
+                                   if(!e.ban_bool  && !e.deleted_bool){
+                                        tempFeedData.push(e);
+                                   }
+                              });
+                              helperReponse = new nexusResponse(0,false,null,tempFeedData,{funcName:'getLinksData',logMess:'data extraction sucess'});
+                         }
+                         else{throw new Error('No data');}
+                    }
+                    else{throw new Error('No uid');}
+          }
+          catch(e){
+               helperReponse = new nexusResponse(1,true,e.message,null,{funcName:'getLinksData',logMess:'data extraction failure'});
+          }
+          return helperReponse;
+     }
 
      async updateSpaceDatabyCron(channel_name,listners,broadcasters){
           const filter = { "agora_channel_name":channel_name};

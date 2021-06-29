@@ -32,7 +32,7 @@ const imagekit = new ImageKit({
 });  
 
 log4js.configure({
-  appenders: { everything: { type: 'file',filename: "./logs/overall_server_1.log" } },
+  appenders: { everything: { type: 'file',filename: "./logs/overall_server_2.log" } },
   categories: { default: { appenders: [ 'everything' ], level: 'debug' } }
 });
 
@@ -69,7 +69,7 @@ const client = new MongoClient(mongo_uri,
   
 
   /*/////////////SERVER VARSs ////////////*/
-const SERVER_VERSION = "0.0.65";
+const SERVER_VERSION = "0.0.7";
 var SERVER_STATUS = "RUNNING";
 var TOTAL_REQUEST_COUNT = 0;
 var TOTAL_SUCESS_PASS = 0;
@@ -77,14 +77,15 @@ var TOTAL_FAILUER_PASS = 0;
 
 /*/////////////////////////////////////////*/
 
-
+//intent://www.youtube.com/watch?v=N9PMmDPO-8U#Intent;package=com.google.android.youtube;scheme=https;end
 
 
 let allowedRoutes = {
   
   makeRelationData:true,
   makeSpaceData:true,
-  
+  makeLinkData:true,
+
   updateSpaceData:true,
   updateUserData:true,
   
@@ -94,6 +95,7 @@ let allowedRoutes = {
   getRelationData:true,
   getUserDatabyUid:true,
   getUserDatabyJid:true,
+  getLinksData:true,
 
   delRelationData:true,
 }
@@ -221,6 +223,21 @@ class server_entry{
         res.send(serverReponse).status(200).end();
          next();
     })
+    router.post('/api/getLinksData',async (req,res,next)=>{
+      TOTAL_REQUEST_COUNT++;
+      let uid=req.body.uid;
+      let serverReponse = null;
+      if(allowedRoutes.getLinksData){
+      if(uid){
+        let resData = await dbClusterHelper.getLinksData(uid);
+        if(!resData.errBool){serverReponse = new nexusResponse(0,false,null,resData.responseData);}
+        else{serverReponse = new nexusResponse(10,true,resData.errMess,null);}}
+        else{serverReponse = new nexusResponse(2,true,'Missing Data',null);}}
+        else{serverReponse = new nexusResponse(1,true,'Route is closed',null);}
+        serverReponse.errBool?TOTAL_FAILUER_PASS++:TOTAL_SUCESS_PASS++;
+        res.send(serverReponse).status(200).end();
+        next();
+    })
     router.get('/api/makeSpaceData',async(req,res,next)=>{
       TOTAL_REQUEST_COUNT++;
       let serverReponse = null;
@@ -230,6 +247,22 @@ class server_entry{
       if(got_uid && space_data){
         let resData = await dbClusterHelper.makeSpaceData(got_uid,space_data);
         console.log(resData.responseData);
+        if(!resData.errBool){serverReponse = new nexusResponse(0,false,null,resData.responseData);}
+        else{serverReponse = new nexusResponse(10,true,resData.errMess,null);}}
+        else{serverReponse = new nexusResponse(2,true,'Missing Data',null);}}
+        else{serverReponse = new nexusResponse(1,true,'Route is closed',null);}
+      serverReponse.errBool?TOTAL_FAILUER_PASS++:TOTAL_SUCESS_PASS++;
+      res.send(serverReponse).status(200).end();
+      next();
+    })
+    router.post('/api/makeLinkData',async(req,res,next)=>{
+      TOTAL_REQUEST_COUNT++;
+      let serverReponse = null;
+      let got_uid=req.body.uid;
+      let link_data=req.body.link_data;
+      if(allowedRoutes.makeLinkData){
+      if(got_uid && link_data){
+        let resData = await dbClusterHelper.makeLinkData(got_uid,link_data);
         if(!resData.errBool){serverReponse = new nexusResponse(0,false,null,resData.responseData);}
         else{serverReponse = new nexusResponse(10,true,resData.errMess,null);}}
         else{serverReponse = new nexusResponse(2,true,'Missing Data',null);}}
@@ -378,7 +411,7 @@ class server_entry{
       if(res){
         logger.debug(`connected successfully to mongodb`);
         this.initRoutes();
-        rtcCron.intiCronJob();
+        //rtcCron.intiCronJob();
       }
     });  
   }

@@ -67,11 +67,10 @@ class rtcCron{
                               broadcaster:[null]
                              });
                              this.dbclusterhelper.updateSpaceDatabyCron(this.SPACES_NAMES[tmpUpdateId],0,[])
-                          //console.log(0);
                        }
                        this.rtcSuccPass++;
                   }).catch((e)=>{
-                       console.log(e);
+                       console.log("Error at channel status"+e);
                        this.rtcFailurePass++;
                   });
                if(this.SPACES_NAMES.length){this.CURR_SPACE_IND = ((this.CURR_SPACE_IND + 1 )%this.SPACES_NAMES.length);}
