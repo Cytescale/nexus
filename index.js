@@ -333,6 +333,7 @@ class server_entry{
   
     router.get('/api/visit/:unique_identifier?',async(req,res,next)=>{
       const uniq_id = req.params.unique_identifier
+      console.log(req.params);
       if(!uniq_id){res.send('No Link Identifier').end();return;}
       let resData = await dbClusterHelper.getLinkDataByUnique(uniq_id);
       if(resData.errBool){res.send(resData).end();return;}
