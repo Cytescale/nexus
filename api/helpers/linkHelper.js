@@ -16,6 +16,13 @@ const queryString = require('query-string');
 
 */
 
+const VALID_YOUTUBE_PATHNAMES=[
+     'c',
+     'watch',
+     'user',
+     'channel'
+]
+
 const VALID_YOUTUBE_DOMAINS=[
      'youtu.be',
      'youtube.com',
@@ -35,20 +42,120 @@ module.exports = class LinkHelper{
        this.logger = logger;
      }
 
+
+     async visitYoutubeLinkParser(visit_parse_url){
+          const path  = visit_parse_url.pathname.split("/")[1]
+          let identified_domain_id = null;
+          let actionType = null;
+          let actionId = null;
+          for(let j = 0 ; j < VALID_YOUTUBE_DOMAINS.length; j++){
+               if(VALID_YOUTUBE_DOMAINS[j]==visit_parse_url.hostname){
+                    identified_domain_id = j;
+                    break;
+               }
+          }
+    
+          switch(identified_domain_id){
+               case 0:{
+                    actionType='watch';
+                    actionId=path;
+                    break;
+               }     
+               case 1:
+               case 2:
+               case 3:{
+                    const query = queryString.parse(visit_parse_url.query)
+                    let fi = null;
+                    for(let i = 0 ;i < VALID_YOUTUBE_PATHNAMES.length;i++){
+                         if(path==VALID_YOUTUBE_PATHNAMES[i]){fi=i;}
+                    }   
+                    switch(fi){
+                         case 0:
+                         case 2:
+                         case 3:{
+                              actionType=visit_parse_url.pathname.split("/")[1];
+                              actionId=visit_parse_url.pathname.split("/")[2];
+                              break;
+                         }
+                         case 1:{
+                              actionType='watch';
+                              actionId=query.v;
+                              break;
+                         }
+                         default:{
+
+                              break;
+                         }      
+                    }
+                  break;
+               }
+               default:{
+               
+                    break;
+               }
+          }
+          return{
+               actionType:actionType,
+               actionId:actionId
+          }
+          
+     }
+
+/*
+
+intent://www.youtube.com/channel/UC20LoHy2mX0LQODrkUalxVQ#Intent;package=com.google.android.youtube;scheme=https;end
+vnd.youtube://www.youtube.com/channel/UC20LoHy2mX0LQODrkUalxVQ
+
+ */
+
+
+
+     async visitLinkParser(linkData,client_os){
+          let helperReponse = null;
+          let iosLink = null;
+          let androidLink = null
+          try{
+          switch(linkData.platform_id){
+               case 1:{
+                    /*youtube response */
+                    let visit_parse_url = new URLParser(linkData.link_dest);
+                    const val = await this.visitYoutubeLinkParser(visit_parse_url);
+                    androidLink = `intent://www.youtube.com/${val.actionType}/${val.actionId}#Intent;package=com.google.android.youtube;scheme=https;end`;
+                    iosLink = `vnd.youtube://www.youtube.com/${val.actionType}/${val.actionId}`;
+                    helperReponse = new nexusResponse(0,false,null,
+                         {iosLink:iosLink,androidLink:androidLink}
+                         ,{funcName:'visitLinkParser',logMess:'URL parsing Failure'});
+                    break;
+               }
+               default:{
+                    throw new Error('Invalid platform');
+                    break;
+               }
+          }}
+          catch(e){
+               helperReponse = new nexusResponse(1,true,e.message,null,{funcName:'visitLinkParser',logMess:'URL parsing Failure'});
+          }
+          return helperReponse;
+     }
+
      async parseYoutubeUrlBool(parsed_url,domain_id){
+          
           switch(domain_id){
                case 0:{
-                    if(parsed_url.pathname){return true;}
+                    if(parsed_url.pathname.split("/")[1]){return true;}
                     else{return false;}
                     break;
                }     
                case 1:
                case 2:
                case 3:{
-                    const url_param = queryString.parse(parsed_url.query);
-                    if(url_param.v){return true;}
-                    else{return false;}
-                    break;
+                    let f=false;
+                    for(let i = 0 ;i < VALID_YOUTUBE_PATHNAMES.length;i++){
+                         if(parsed_url.pathname.split("/")[1]==VALID_YOUTUBE_PATHNAMES[i]){
+                              f=true;
+                         }
+                    }    
+                    return f;
                }
                default:{
                     return false;
@@ -66,8 +173,9 @@ module.exports = class LinkHelper{
           let valid_url = false;
           let parse_validity  = false;
           try{ 
-               const parsed_url = new URLParser(url);     
+               let parsed_url = new URLParser(url);     
                
+
                for (let i = 0 ; i < VALID_DOMAINS.length ; i++){
                     for(let j = 0 ; j < VALID_DOMAINS[i].length; j++){
                          if(VALID_DOMAINS[i][j]==parsed_url.hostname){

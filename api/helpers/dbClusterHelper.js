@@ -41,6 +41,26 @@ module.exports = class DbClusterHelper{
           });
      }
 
+     async getLinkDataByUnique(unique_identifier){
+          let helperReponse = null;
+          try{  
+            let foundData  = null;
+            if(this.getClient()){
+                  const collection = this.getClient().db('central_db').collection("link_collec").find({'unique_identifier':unique_identifier}); 
+                  let data = await collection.toArray();
+                    if(data.length==1){
+                      foundData = {gotData:data[0]}
+                      helperReponse = new nexusResponse(0,false,null,foundData,{funcName:'getLinkDataByUnique',logMess:'data extraction success'});
+                    }
+                    else{throw new Error('No Space data found')}
+            }else{throw new Error('No client')}
+          } 
+               catch(e){
+               helperReponse = new nexusResponse(1,true,e.message,null,{funcName:'getLinkDataByUnique',logMess:'data extraction failure'});
+               }
+             return helperReponse;
+     }
+
      async getSpaceDatabySid(got_uid,got_sid){
      let helperReponse = null;
      try{  

@@ -24,6 +24,7 @@ const {mongo_uri} =                 require("./certs/mongo_connect_cert");
 const imageKitCert =                require("./certs/imagekey_cert.json");
 const compression =                 require('compression')
 const LinkHelper =                  require('./api/helpers/linkHelper');
+const parser =                      require('ua-parser-js');
 
 const imagekit = new ImageKit({
   urlEndpoint: "https://ik.imagekit.io/cyte",
@@ -69,7 +70,7 @@ const client = new MongoClient(mongo_uri,
   
 
   /*/////////////SERVER VARSs ////////////*/
-const SERVER_VERSION = "0.0.73";
+const SERVER_VERSION = "0.0.77";
 var SERVER_STATUS = "RUNNING";
 var TOTAL_REQUEST_COUNT = 0;
 var TOTAL_SUCESS_PASS = 0;
@@ -329,7 +330,40 @@ class server_entry{
       res.send(serverReponse).status(200).end();
       next();
     })
-    
+  
+    router.get('/api/visit/:unique_identifier?',async(req,res,next)=>{
+      const uniq_id = req.params.unique_identifier
+      if(!uniq_id){res.send('No Link Identifier').end();return;}
+      let resData = await dbClusterHelper.getLinkDataByUnique(uniq_id);
+      if(resData.errBool){res.send(resData).end();return;}
+      if(resData.responseData.gotData.ban_bool){res.send('Link baned').end();return;}
+      if(resData.responseData.gotData.deleted_bool){res.send('Link Deleted').end();return;}
+      if(!resData.responseData.gotData.active_bool){res.send('Link Disabled').end();return;}
+      let ua = parser(req.headers['user-agent']); 
+      let redirectData  = await linkHelper.visitLinkParser(resData.responseData.gotData,ua.os.name)
+      if(!redirectData.errBool){
+        switch(ua.os.name)
+        {
+            case 'Android':{
+              res.redirect(redirectData.responseData.androidLink);
+              break;
+            }
+            case 'iOS':{
+              res.redirect(redirectData.responseData.iosLink);
+              break;
+            }
+            case 'Windows':{
+              res.redirect(resData.responseData.gotData.link_dest);
+              break;
+            }
+            default:{
+              res.redirect(resData.responseData.gotData.link_dest);
+            }
+        }
+      }
+      else{res.send('Link Parsing error , We apppologise for inconvience ').end();return;}
+      next();
+    })
 
     router.get('/api/getFollowCount',async(req,res,next)=>{
       TOTAL_REQUEST_COUNT++;
