@@ -23,7 +23,7 @@ const FirebaseHelper =              require("./api/helpers/firebaseHelper");
 const {mongo_uri} =                 require("./certs/mongo_connect_cert");
 const imageKitCert =                require("./certs/imagekey_cert.json");
 const compression =                 require('compression')
-
+const LinkHelper =                  require('./api/helpers/linkHelper');
 
 const imagekit = new ImageKit({
   urlEndpoint: "https://ik.imagekit.io/cyte",
@@ -69,7 +69,7 @@ const client = new MongoClient(mongo_uri,
   
 
   /*/////////////SERVER VARSs ////////////*/
-const SERVER_VERSION = "0.0.7";
+const SERVER_VERSION = "0.0.73";
 var SERVER_STATUS = "RUNNING";
 var TOTAL_REQUEST_COUNT = 0;
 var TOTAL_SUCESS_PASS = 0;
@@ -98,10 +98,14 @@ let allowedRoutes = {
   getLinksData:true,
 
   delRelationData:true,
+
+  checkURLData:true,
+
 }
   
 var dbClusterHelper =  new DbClusterHelper(client,logger);
 var firebaseHelper =  new FirebaseHelper(logger);
+var linkHelper =      new LinkHelper(logger);
 var rtcCron =         new RtcCron(logger,dbClusterHelper);
 
 var corsOptions = {
@@ -308,6 +312,25 @@ class server_entry{
         res.send(serverReponse).status(200).end();
         next();
     })
+
+    router.post('/api/checkURLData',async(req,res,next)=>{
+      TOTAL_REQUEST_COUNT++;
+      let serverReponse = null;
+      let got_uid=req.body.uid;
+      let link_url=req.body.link_url;
+      if(allowedRoutes.checkURLData){
+      if(got_uid && link_url){
+        let resData = await linkHelper.URLValidity(got_uid,link_url);
+        if(!resData.errBool){serverReponse = new nexusResponse(0,false,null,resData.responseData);}
+        else{serverReponse = new nexusResponse(10,true,resData.errMess,null);}}
+        else{serverReponse = new nexusResponse(2,true,'Missing Data',null);}}
+        else{serverReponse = new nexusResponse(1,true,'Route is closed',null);}
+      serverReponse.errBool?TOTAL_FAILUER_PASS++:TOTAL_SUCESS_PASS++;
+      res.send(serverReponse).status(200).end();
+      next();
+    })
+    
+
     router.get('/api/getFollowCount',async(req,res,next)=>{
       TOTAL_REQUEST_COUNT++;
       let uid=req.body.uid;
