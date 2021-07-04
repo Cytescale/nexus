@@ -9,6 +9,7 @@
   "author": "Nikhil Wilayate",
   "license": "ISC",
   "dependencies": {
+    "@sentry/node": "^6.8.0",
     "@types/mongodb": "^3.6.18",
     "agora-access-token": "^2.0.4",
     "axios": "^0.21.1",

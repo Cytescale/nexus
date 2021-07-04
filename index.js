@@ -25,12 +25,22 @@ const imageKitCert =                require("./certs/imagekey_cert.json");
 const compression =                 require('compression')
 const LinkHelper =                  require('./api/helpers/linkHelper');
 const parser =                      require('ua-parser-js');
+const Sentry =                      require('@sentry/node');
+const Tracing =                     require("@sentry/tracing");
 
 const imagekit = new ImageKit({
   urlEndpoint: "https://ik.imagekit.io/cyte",
   publicKey: 'public_/DkOKC6N0KqktP0jSpjDTtKpiTA=',
   privateKey: 'private_LgxIx1g7AY/LeX7jtJBlh1Pmis8='
 });  
+Sentry.init({
+  dsn: "https://5481605b6d97412d80c5a8730abcbd2a@o574764.ingest.sentry.io/5848209",
+  integrations: [
+    new Sentry.Integrations.Http({ tracing: true }),
+    new Tracing.Integrations.Express({ app }),
+  ],
+  tracesSampleRate: 1.0,
+});
 
 
 log4js.configure({
@@ -488,6 +498,8 @@ class server_entry{
   }
 
   init(){
+    app.use(Sentry.Handlers.requestHandler());
+    app.use(Sentry.Handlers.tracingHandler());
     app.use(express.static(__dirname));
     app.use(cors(corsOptions));
     app.use(bodyParser.json())
@@ -506,6 +518,7 @@ class server_entry{
       if(res){
         logger.debug(`connected successfully to mongodb`);
         this.initRoutes();
+        app.use(Sentry.Handlers.errorHandler());
         //rtcCron.intiCronJob();
       }
     });  
