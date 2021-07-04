@@ -25,12 +25,18 @@ const imageKitCert =                require("./certs/imagekey_cert.json");
 const compression =                 require('compression')
 const LinkHelper =                  require('./api/helpers/linkHelper');
 const parser =                      require('ua-parser-js');
+const io =                          require('@pm2/io')
+
 
 const imagekit = new ImageKit({
   urlEndpoint: "https://ik.imagekit.io/cyte",
   publicKey: 'public_/DkOKC6N0KqktP0jSpjDTtKpiTA=',
   privateKey: 'private_LgxIx1g7AY/LeX7jtJBlh1Pmis8='
 });  
+
+io.init({
+  transactions: true // will enable the transaction tracing
+})
 
 log4js.configure({
   appenders: { everything: { type: 'file',filename: "./logs/overall_server_2.log" } },
