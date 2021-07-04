@@ -139,6 +139,7 @@ class server_entry{
 
   initRoutes(){
     router.use('/api/',limiter);
+    router.use(require('express-status-monitor')());
     router.get('/',(req,res,next)=>{
       res.send(`<h3><bold>Hey There👋<br/>Version: ${SERVER_VERSION}  <div>SERVER STATUS: ${SERVER_STATUS}</div></bold></h3>`).status(200).end();
       next();
@@ -493,7 +494,7 @@ class server_entry{
     app.use(bodyParser.urlencoded({ extended: true })) 
     app.use(router);
     app.use(compression())
-    app.use(require('express-status-monitor')());
+    
 
     firebaseHelper.firebaseInit();
     app.listen(port,() => {
