@@ -70,7 +70,7 @@ const client = new MongoClient(mongo_uri,
   
 
   /*/////////////SERVER VARSs ////////////*/
-const SERVER_VERSION = "0.0.77";
+const SERVER_VERSION = "0.0.8";
 var SERVER_STATUS = "RUNNING";
 var TOTAL_REQUEST_COUNT = 0;
 var TOTAL_SUCESS_PASS = 0;
@@ -89,7 +89,8 @@ let allowedRoutes = {
 
   updateSpaceData:true,
   updateUserData:true,
-  
+  updateLinkData:true,
+
   getFollowCount:true,
   getSpaceDatabySid:true,
   getSpaceFeedData:true,
@@ -97,6 +98,7 @@ let allowedRoutes = {
   getUserDatabyUid:true,
   getUserDatabyJid:true,
   getLinksData:true,
+  getLinkDatabyUniId:true,
 
   delRelationData:true,
 
@@ -243,6 +245,22 @@ class server_entry{
         res.send(serverReponse).status(200).end();
         next();
     })
+    router.post('/api/getLinksDatabyUniId',async (req,res,next)=>{
+      TOTAL_REQUEST_COUNT++;
+      let uid=req.body.uid;
+      let uniid=req.body.uniid;
+      let serverReponse = null;
+      if(allowedRoutes.getLinkDatabyUniId){
+      if(uid && uniid){
+        let resData = await dbClusterHelper.getLinkDataByUnique(uniid);
+        if(!resData.errBool){serverReponse = new nexusResponse(0,false,null,resData.responseData);}
+        else{serverReponse = new nexusResponse(10,true,resData.errMess,null);}}
+        else{serverReponse = new nexusResponse(2,true,'Missing Data',null);}}
+        else{serverReponse = new nexusResponse(1,true,'Route is closed',null);}
+        serverReponse.errBool?TOTAL_FAILUER_PASS++:TOTAL_SUCESS_PASS++;
+        res.send(serverReponse).status(200).end();
+        next();
+    })    
     router.get('/api/makeSpaceData',async(req,res,next)=>{
       TOTAL_REQUEST_COUNT++;
       let serverReponse = null;
@@ -272,6 +290,23 @@ class server_entry{
         else{serverReponse = new nexusResponse(10,true,resData.errMess,null);}}
         else{serverReponse = new nexusResponse(2,true,'Missing Data',null);}}
         else{serverReponse = new nexusResponse(1,true,'Route is closed',null);}
+      serverReponse.errBool?TOTAL_FAILUER_PASS++:TOTAL_SUCESS_PASS++;
+      res.send(serverReponse).status(200).end();
+      next();
+    })
+    router.post('/api/updateLinkData',async (req,res,next)=>{
+      TOTAL_REQUEST_COUNT++;
+      let uid=req.body.uid;
+      let linkId=req.body.linkid;
+      let update_data =req.body.update_data;
+      let serverReponse = null;
+      if(allowedRoutes.updateLinkData){
+        if(uid && update_data){
+        let resData = await dbClusterHelper.updateLinkInfo(uid,linkId,update_data);
+        if(!resData.errBool){serverReponse = new nexusResponse(0,false,null,resData.responseData);}
+        else{serverReponse = new nexusResponse(10,true,resData.errMess,null);}}
+        else{serverReponse = new nexusResponse(2,true,'Missing Data',null);}}
+       else{serverReponse = new nexusResponse(1,true,'Route is closed',null);}
       serverReponse.errBool?TOTAL_FAILUER_PASS++:TOTAL_SUCESS_PASS++;
       res.send(serverReponse).status(200).end();
       next();
@@ -333,7 +368,6 @@ class server_entry{
   
     router.get('/api/visit/:unique_identifier?',async(req,res,next)=>{
       const uniq_id = req.params.unique_identifier
-      console.log(req.params);
       if(!uniq_id){res.send('No Link Identifier').end();return;}
       let resData = await dbClusterHelper.getLinkDataByUnique(uniq_id);
       if(resData.errBool){res.send(resData).end();return;}

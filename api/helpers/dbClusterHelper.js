@@ -40,7 +40,6 @@ module.exports = class DbClusterHelper{
                }
           });
      }
-
      async getLinkDataByUnique(unique_identifier){
           let helperReponse = null;
           try{  
@@ -52,6 +51,15 @@ module.exports = class DbClusterHelper{
                       foundData = {gotData:data[0]}
                       helperReponse = new nexusResponse(0,false,null,foundData,{funcName:'getLinkDataByUnique',logMess:'data extraction success'});
                     }
+                    else if(data.length>0){
+                         for(let i = 0 ; i < data.length ; i++){
+                              if(data[i].deleted_bool==false){
+                                   foundData = {gotData:data[i]}   
+                                   break;
+                              }
+                         }
+                         helperReponse = new nexusResponse(0,false,null,foundData,{funcName:'getLinkDataByUnique',logMess:'data extraction success'});
+                    }
                     else{throw new Error('No Space data found')}
             }else{throw new Error('No client')}
           } 
@@ -60,7 +68,6 @@ module.exports = class DbClusterHelper{
                }
              return helperReponse;
      }
-
      async getSpaceDatabySid(got_uid,got_sid){
      let helperReponse = null;
      try{  
@@ -151,7 +158,6 @@ module.exports = class DbClusterHelper{
           }
           return helperReponse;
      }
-     
      async makeLinkData(got_uid,got_data){
           let helperReponse = null;
           try{  
@@ -178,7 +184,6 @@ module.exports = class DbClusterHelper{
           }
           return helperReponse;
      }
-
      async getLinksData(got_uid){
           let helperReponse = null;
           try{
@@ -204,13 +209,48 @@ module.exports = class DbClusterHelper{
           }
           return helperReponse;
      }
-
+     async updateLinkInfo(got_uid,linkId,got_data){
+          let uniKeyChangeBool = false;
+          let alloweduniKeyChangeBool = true;
+          let helperReponse = null;
+          try{  
+            if(got_uid && got_data && linkId){
+              got_data.update_timestamp = Date.now();
+              if(got_data.unique_identifier){
+                const od  = await this.getLinkDataByUnique(got_data.unique_identifier);
+                const oldData = od.responseData;
+                if(oldData){
+                   if(oldData.gotData.creator_id==got_uid && oldData.gotData._id == linkId ){
+                    alloweduniKeyChangeBool=true;
+                   }
+                   else if(oldData.gotData.deleted_bool){
+                         alloweduniKeyChangeBool=true;
+                   }
+                   else{alloweduniKeyChangeBool =false
+                       throw new Error('Unique id already exist');}
+                }
+                else{uniKeyChangeBool = true;alloweduniKeyChangeBool=true;}
+              }
+              if(alloweduniKeyChangeBool){
+                  const filter = {_id:ObjectId(linkId)};
+                  const updateDocument = {$set: got_data,};
+                  const result = await this.getClient().db('central_db').collection("link_collec").updateOne(filter,updateDocument); 
+                    if(result){
+                      helperReponse = new nexusResponse(0,false,null,{editSuccessBool:true,uniKeyChangeBool:uniKeyChangeBool},{funcName:'updateLinkInfo',logMess:'data update success'});
+                    }else{throw new Error('Data update failure');  }
+                  }else{throw new Error('Unique id already exist');}
+                }else{throw new Error('No uid | data');}
+             }
+             catch(e){
+                  helperReponse = new nexusResponse(1,true,e.message,null,{funcName:'updateUserInfo',logMess:'data update failure'});
+               }
+             return helperReponse;
+     }
      async updateSpaceDatabyCron(channel_name,listners,broadcasters){
           const filter = { "agora_channel_name":channel_name};
           const updateDocument = {$set: {'listners':listners,'broadcaster':broadcasters}};
           this.getClient().db('central_db').collection("user_space_collec").updateOne(filter,updateDocument);                
      }
-
      async updateSpaceData(got_uid,got_sid,got_data){
           let helperReponse = null;
           try{  
