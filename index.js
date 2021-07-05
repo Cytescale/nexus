@@ -1,5 +1,4 @@
 'use strict';
-require('dotenv').config()
 const cors =                        require('cors');
 const os =                          require('os');
 const express =                     require('express');
@@ -28,8 +27,6 @@ const LinkHelper =                  require('./api/helpers/linkHelper');
 const parser =                      require('ua-parser-js');
 const Sentry =                      require('@sentry/node');
 const Tracing =                     require("@sentry/tracing");
-
-
 
 const imagekit = new ImageKit({
   urlEndpoint: "https://ik.imagekit.io/cyte",
