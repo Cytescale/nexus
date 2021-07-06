@@ -25,26 +25,16 @@ const imageKitCert =                require("./certs/imagekey_cert.json");
 const compression =                 require('compression')
 const LinkHelper =                  require('./api/helpers/linkHelper');
 const parser =                      require('ua-parser-js');
-const Sentry =                      require('@sentry/node');
-const Tracing =                     require("@sentry/tracing");
+//NODE_ENV=production
 
 const imagekit = new ImageKit({
   urlEndpoint: "https://ik.imagekit.io/cyte",
   publicKey: 'public_/DkOKC6N0KqktP0jSpjDTtKpiTA=',
   privateKey: 'private_LgxIx1g7AY/LeX7jtJBlh1Pmis8='
 });  
-Sentry.init({
-  dsn: "https://5481605b6d97412d80c5a8730abcbd2a@o574764.ingest.sentry.io/5848209",
-  integrations: [
-    new Sentry.Integrations.Http({ tracing: true }),
-    new Tracing.Integrations.Express({ app }),
-  ],
-  tracesSampleRate: 1.0,
-});
-
 
 log4js.configure({
-  appenders: { everything: { type: 'file',filename: "./logs/overall_server_2.log" } },
+  appenders: { everything: { type: 'file',filename: "./logs/overall_server_3.log" } },
   categories: { default: { appenders: [ 'everything' ], level: 'debug' } }
 });
 
@@ -81,7 +71,7 @@ const client = new MongoClient(mongo_uri,
   
 
   /*/////////////SERVER VARSs ////////////*/
-const SERVER_VERSION = "0.0.8";
+const SERVER_VERSION = "0.0.9";
 var SERVER_STATUS = "RUNNING";
 var TOTAL_REQUEST_COUNT = 0;
 var TOTAL_SUCESS_PASS = 0;
@@ -108,6 +98,7 @@ let allowedRoutes = {
   getRelationData:true,
   getUserDatabyUid:true,
   getUserDatabyJid:true,
+  getUserDatabyUname:true,
   getLinksData:true,
   getLinkDatabyUniId:true,
 
@@ -360,7 +351,6 @@ class server_entry{
         res.send(serverReponse).status(200).end();
         next();
     })
-
     router.post('/api/checkURLData',async(req,res,next)=>{
       TOTAL_REQUEST_COUNT++;
       let serverReponse = null;
@@ -377,7 +367,7 @@ class server_entry{
       res.send(serverReponse).status(200).end();
       next();
     })
-  
+
     router.get('/api/visit/:unique_identifier?',async(req,res,next)=>{
       const uniq_id = req.params.unique_identifier
       if(!uniq_id){res.send('No Link Identifier').end();return;}
@@ -386,6 +376,8 @@ class server_entry{
       if(resData.responseData.gotData.ban_bool){res.send('Link baned').end();return;}
       if(resData.responseData.gotData.deleted_bool){res.send('Link Deleted').end();return;}
       if(!resData.responseData.gotData.active_bool){res.send('Link Disabled').end();return;}
+      if(!resData.responseData.gotData.deeplink_bool){res.redirect(resData.responseData.gotData.link_dest);return;}
+      console.log(resData.responseData.gotData);
       let ua = parser(req.headers['user-agent']); 
       let redirectData  = await linkHelper.visitLinkParser(resData.responseData.gotData,ua.os.name)
       if(!redirectData.errBool){
@@ -411,7 +403,6 @@ class server_entry{
       else{res.send('Link Parsing error , We apppologise for inconvience ').end();return;}
       next();
     })
-
     router.get('/api/getFollowCount',async(req,res,next)=>{
       TOTAL_REQUEST_COUNT++;
       let uid=req.body.uid;
@@ -493,13 +484,27 @@ class server_entry{
         res.send(serverReponse).status(200).end();
          next();
     })
-    
+    router.post('/api/getUserDatabyUname',async (req,res,next)=>{
+      TOTAL_REQUEST_COUNT++;
+      let serverReponse = null;
+      let uname=req.body.uname;
+      if(allowedRoutes.getUserDatabyUname){
+      if(uname){
+          let resData = await dbClusterHelper.getUserDatabyUname(uname);
+          if(!resData.errBool){serverReponse = new nexusResponse(0,false,null,resData.responseData);}
+          else{serverReponse = new nexusResponse(10,true,resData.errMess,null);}
+        }
+          else{serverReponse = new nexusResponse(2,true,'Missing Data',null);}
+       }
+        else{serverReponse = new nexusResponse(1,true,'Route is closed',null);}
+      serverReponse.errBool?TOTAL_FAILUER_PASS++:TOTAL_SUCESS_PASS++;
+      res.send(serverReponse).status(200).end();
+      next();
+    })
   
   }
 
   init(){
-    app.use(Sentry.Handlers.requestHandler());
-    app.use(Sentry.Handlers.tracingHandler());
     app.use(express.static(__dirname));
     app.use(cors(corsOptions));
     app.use(bodyParser.json())
@@ -518,7 +523,6 @@ class server_entry{
       if(res){
         logger.debug(`connected successfully to mongodb`);
         this.initRoutes();
-        app.use(Sentry.Handlers.errorHandler());
         //rtcCron.intiCronJob();
       }
     });  
