@@ -71,7 +71,7 @@ const client = new MongoClient(mongo_uri,
   
 
   /*/////////////SERVER VARSs ////////////*/
-const SERVER_VERSION = "0.0.9";
+const SERVER_VERSION = "0.1.1";
 var SERVER_STATUS = "RUNNING";
 var TOTAL_REQUEST_COUNT = 0;
 var TOTAL_SUCESS_PASS = 0;
@@ -91,6 +91,7 @@ let allowedRoutes = {
   updateSpaceData:true,
   updateUserData:true,
   updateLinkData:true,
+  updateClusterConfigData:true,
 
   getFollowCount:true,
   getSpaceDatabySid:true,
@@ -101,7 +102,11 @@ let allowedRoutes = {
   getUserDatabyUname:true,
   getLinksData:true,
   getLinkDatabyUniId:true,
+  getLinksDatabyId:true,
+  getClusterConfigbyUid:true,
 
+  buildClusterLinkArray:true,
+  
   delRelationData:true,
 
   checkURLData:true,
@@ -136,6 +141,28 @@ class server_entry{
       SERVER_STATUS = "INTERUPTED";
       return false;
     }
+  }
+
+
+  async userAccountCheck(uid){
+    let serverReponse = null;
+    try{
+        let clusterConfigRes = await dbClusterHelper.ifClusterConfigPresent(uid);
+          if(clusterConfigRes.errCode==11){
+            let newClusterConfigRes = await dbClusterHelper.makeClusterConfig(uid);
+            if(newClusterConfigRes.errBool){throw new Error(newClusterConfigRes.errMess)}
+            else{serverReponse = new nexusResponse(0,false,null,{check_pass:true});}
+          }
+          else if(clusterConfigRes.errCode == 0){
+            serverReponse = new nexusResponse(0,false,null,{check_pass:true});
+          }else{
+            throw new Error('Cluster Check Unknown Error')
+          }
+    }
+    catch(e){
+      serverReponse = new nexusResponse(10,true,e.message,{check_pass:false});
+    }
+    return serverReponse;
   }
 
   initRoutes(){
@@ -264,6 +291,22 @@ class server_entry{
         res.send(serverReponse).status(200).end();
         next();
     })    
+    router.post('/api/getLinksDatabyId',async (req,res,next)=>{
+      TOTAL_REQUEST_COUNT++;
+      let uid=req.body.uid;
+      let id=req.body.id;
+      let serverReponse = null;
+      if(allowedRoutes.getLinksDatabyId){
+      if(uid && id){
+        let resData = await dbClusterHelper.getLinkDataById(id);
+        if(!resData.errBool){serverReponse = new nexusResponse(0,false,null,resData.responseData);}
+        else{serverReponse = new nexusResponse(10,true,resData.errMess,null);}}
+        else{serverReponse = new nexusResponse(2,true,'Missing Data',null);}}
+        else{serverReponse = new nexusResponse(1,true,'Route is closed',null);}
+        serverReponse.errBool?TOTAL_FAILUER_PASS++:TOTAL_SUCESS_PASS++;
+        res.send(serverReponse).status(200).end();
+        next();
+    })    
     router.get('/api/makeSpaceData',async(req,res,next)=>{
       TOTAL_REQUEST_COUNT++;
       let serverReponse = null;
@@ -289,6 +332,22 @@ class server_entry{
       if(allowedRoutes.makeLinkData){
       if(got_uid && link_data){
         let resData = await dbClusterHelper.makeLinkData(got_uid,link_data);
+        if(!resData.errBool){serverReponse = new nexusResponse(0,false,null,resData.responseData);}
+        else{serverReponse = new nexusResponse(10,true,resData.errMess,null);}}
+        else{serverReponse = new nexusResponse(2,true,'Missing Data',null);}}
+        else{serverReponse = new nexusResponse(1,true,'Route is closed',null);}
+      serverReponse.errBool?TOTAL_FAILUER_PASS++:TOTAL_SUCESS_PASS++;
+      res.send(serverReponse).status(200).end();
+      next();
+    })
+    router.post('/api/buildClusterLinkArray',async(req,res,next)=>{
+      TOTAL_REQUEST_COUNT++;
+      let serverReponse = null;
+      let got_uid=req.body.uid;
+      let cluster_id=req.body.cluster_id;
+      if(allowedRoutes.buildClusterLinkArray){
+      if(got_uid){
+        let resData = await dbClusterHelper.buildClusterLinkHandler(got_uid,cluster_id);
         if(!resData.errBool){serverReponse = new nexusResponse(0,false,null,resData.responseData);}
         else{serverReponse = new nexusResponse(10,true,resData.errMess,null);}}
         else{serverReponse = new nexusResponse(2,true,'Missing Data',null);}}
@@ -367,7 +426,6 @@ class server_entry{
       res.send(serverReponse).status(200).end();
       next();
     })
-
     router.get('/api/visit/:unique_identifier?',async(req,res,next)=>{
       const uniq_id = req.params.unique_identifier
       if(!uniq_id){res.send('No Link Identifier').end();return;}
@@ -452,16 +510,40 @@ class server_entry{
       res.send(serverReponse).status(200).end();
       next();
     })
+    router.post('/api/updateClusterConfigData',async (req,res,next)=>{
+      TOTAL_REQUEST_COUNT++;
+      let uid=req.body.uid;
+      let cluster_id = req.body.cluster_id;
+      let update_data =req.body.update_data;
+      let serverReponse = null;
+      if(allowedRoutes.updateClusterConfigData){
+        if(uid && cluster_id && update_data){
+        let resData = await dbClusterHelper.updateClusterConfig(uid,cluster_id,update_data);
+        if(!resData.errBool){serverReponse = new nexusResponse(0,false,null,resData.responseData);}
+        else{serverReponse = new nexusResponse(10,true,resData.errMess,null);}}
+        else{serverReponse = new nexusResponse(2,true,'Missing Data',null);}}
+       else{serverReponse = new nexusResponse(1,true,'Route is closed',null);}
+      serverReponse.errBool?TOTAL_FAILUER_PASS++:TOTAL_SUCESS_PASS++;
+      res.send(serverReponse).status(200).end();
+      next();
+    })
     router.post('/api/getUserDatabyUid',async (req,res,next)=>{
       TOTAL_REQUEST_COUNT++;
       let serverReponse = null;
       let uid=req.body.uid;
+      let checkUser = req.body.check_user;
+      let UAC = null;
       if(allowedRoutes.getUserDatabyUid){
       if(uid){
-          let resData = await dbClusterHelper.getUserDatabyUid(uid);
-          if(!resData.errBool){serverReponse = new nexusResponse(0,false,null,resData.responseData);}
-          else{serverReponse = new nexusResponse(10,true,resData.errMess,null);}
-        }
+        if(checkUser){UAC  = await this.userAccountCheck(uid);
+        }else{UAC = new nexusResponse(0,false,null,null);}
+          if(!UAC.errBool){
+            let resData = await dbClusterHelper.getUserDatabyUid(uid);
+            if(!resData.errBool){serverReponse = new nexusResponse(0,false,null,resData.responseData);}
+            else{serverReponse = new nexusResponse(10,true,resData.errMess,null);}  
+          }
+          else{serverReponse = new nexusResponse(3,true,'User check failed',null);}
+          }
           else{serverReponse = new nexusResponse(2,true,'Missing Data',null);}
        }
         else{serverReponse = new nexusResponse(1,true,'Route is closed',null);}
@@ -500,6 +582,21 @@ class server_entry{
       serverReponse.errBool?TOTAL_FAILUER_PASS++:TOTAL_SUCESS_PASS++;
       res.send(serverReponse).status(200).end();
       next();
+    })
+    router.post('/api/getClusterConfigbyUid',async (req,res,next)=>{
+      TOTAL_REQUEST_COUNT++;
+      let uid=req.body.uid;
+      let serverReponse = null;
+      if(allowedRoutes.getClusterConfigbyUid){
+      if(uid){
+        let resData = await dbClusterHelper.getClusterConfigbyUid(uid);
+        if(!resData.errBool){serverReponse = new nexusResponse(0,false,null,resData.responseData);}
+        else{serverReponse = new nexusResponse(10,true,resData.errMess,null);}}
+        else{serverReponse = new nexusResponse(2,true,'Missing Data',null);}}
+        else{serverReponse = new nexusResponse(1,true,'Route is closed',null);}
+        serverReponse.errBool?TOTAL_FAILUER_PASS++:TOTAL_SUCESS_PASS++;
+        res.send(serverReponse).status(200).end();
+        next();
     })
   
   }

@@ -5,7 +5,21 @@ const ObjectId =                       require('mongodb').ObjectId;
 const randomstring =                   require("randomstring");
 const nexusResponse =                  require("../../utils/resonseComposite");
 
+/*
 
+activity config 
+
+creator_id
+activity_id
+affected_link_id
+
+for_admin_bool
+
+creation_timestamp
+updated_timestamp
+
+
+*/
 
 const appID = 'd95380ef73954640840d0b042d9e128d';
 const appCertificate = '9be93592e761407daa9e7bb45c2d39d6';
@@ -25,6 +39,176 @@ module.exports = class DbClusterHelper{
      }
      getClient(){return DbClusterHelper.client;}
    
+     async ifClusterConfigPresent(got_uid){
+          let errCode = 0;
+          let helperReponse = null;
+          try{
+                    if(got_uid){
+                         const collection = this.getClient().db('central_db').collection("cluster_config_collec").find({'creator_id':got_uid}); 
+                         let data = await collection.toArray();
+                         if(data.length==1){helperReponse = new nexusResponse(errCode,false,null,{present:true,cluster_id:data[0]._id},{funcName:'ifClusterConfigPresent',logMess:'data extraction sucess'});}
+                         else if(data.length>0){
+                              errCode = 12;
+                              throw new Error('Multiple Cluster Config found');}
+                         else{errCode = 11;
+                              throw new Error('No data');}
+                    }else{throw new Error('No uid');}
+          }
+          catch(e){helperReponse = new nexusResponse(errCode,true,e.message,null,{funcName:'ifClusterConfigPresent',logMess:'data extraction failure'});}
+          return helperReponse;
+     }  
+     async makeClusterConfig(got_uid){
+          let got_data={
+               creator_id:got_uid,
+               design_temp_id:0,
+               ban_bool:false,
+               deleted_bool:false,
+               active_bool:true,
+               dest_as_uname_bool:true,
+               profile_card_bool:true,
+               footer_card_bool:true,
+               link_ids:[]
+          }
+          let helperReponse = null;
+          try{  
+               if(this.getClient()){
+                    if(got_uid && got_data){
+                    got_data.creation_timestamp  = Date.now();
+                    got_data.update_timestamp  = Date.now();
+                     const collection = this.getClient().db('central_db').collection("cluster_config_collec"); 
+                     let result = await collection.insertOne(got_data);
+                     if(result.insertedCount==1){
+                         helperReponse = new nexusResponse(0,false,null,{cluster_created:true,cluster_insert_id:result.insertedId},{funcName:'makeClusterConfig',logMess:'data make success'});
+                         let userDataResp = await this.updateUserInfo(got_uid,{"cluster_config_id":result.insertedId});
+                         if(userDataResp.errBool){throw new Error(userDataResp.errMess);}
+                     }
+                    else{throw new Error('data insert failure');}
+                    }else{throw new Error('Missing uid|data')}
+                    }else{throw new Error('No client')}
+          }
+          catch(e){
+                    helperReponse = new nexusResponse(1,true,e.message,null,{funcName:'makeClusterConfig',logMess:'data make failure'});
+          }
+          return helperReponse;
+     }
+
+
+     async buildClusterLinkHandler(got_uid,cluster_id){
+          let helperReponse = null;
+          try{
+               await this.buildClusterLinkArray(got_uid,cluster_id).then(()=>{
+               helperReponse =  new nexusResponse(0,false,null,{build_link_array_bool:true},{funcName:'buildClusterLinkHandler',logMess:'data updation success'});
+               })
+          }
+          catch(e){
+               helperReponse = new nexusResponse(1,true,e.message,null,{funcName:'buildClusterLinkHandler',logMess:'data updation failure'});
+          }
+          return helperReponse;
+     }
+
+     async buildClusterLinkArray(got_uid,cluster_id){
+          
+          let clus_id = null;
+          if(!cluster_id){
+               let urs = await this.getUserDatabyUid(got_uid);
+               clus_id = urs.responseData.cluster_config_id;
+          }else{
+               clus_id = cluster_id
+          }
+
+          let lstDataRes = await this.getClusterConfigbyId(clus_id)
+          let oldLnkList = lstDataRes.responseData.link_ids;  
+          let lnkNotPreArray = [];
+          let deleteLinkArry = []; 
+          let linkData = await this.getLinksData(got_uid);
+          const collection = this.getClient().db('central_db').collection("link_collec").find({'creator_id':got_uid,"deleted_bool":true}); 
+          let deleted_link_data = await collection.toArray();
+          if(!linkData.errBool){
+               for(let z in deleted_link_data){
+                    for(let i in oldLnkList){ 
+                         if(oldLnkList[i] == ObjectId(deleted_link_data[z]._id).toString()){
+                              console.log('in');
+                              deleteLinkArry.push(oldLnkList[i]);
+                              break;
+                         }    
+                    }
+               }
+               for(let j in linkData.responseData) {   
+                    let f=false;
+                    for( let i in oldLnkList ){
+                              if(oldLnkList[i] == ObjectId(linkData.responseData[j]._id).toString()){
+                                   f=true;
+                                   break;
+                              }
+                    }
+                    if(!f){lnkNotPreArray.push(ObjectId(linkData.responseData[j]._id).toString())}
+               }
+               oldLnkList = oldLnkList.filter(x => !deleteLinkArry.includes(x) );
+               let ur = await this.updateClusterConfig(got_uid,clus_id,{link_ids:oldLnkList.concat(lnkNotPreArray)})
+               if(ur.errBool){throw new Error(ur.errMess)}
+          }else{throw new Error(linkData.errMess);}
+     }
+
+     async getClusterConfigbyId(id){
+          let helperReponse = null;
+          try{
+                    if(id){
+                         const lnkCollec = this.getClient().db('central_db').collection("cluster_config_collec").find({'_id':ObjectId(id)}); 
+                         let data = await lnkCollec.toArray();
+                         if(data.length==1)
+                         {
+                              helperReponse = new nexusResponse(0,false,null,data[0],{funcName:'getClusterConfigbyId',logMess:'data extraction sucess'});
+                         }
+                         else if(data.length > 1){throw new Error('Multiple Config file found')}
+                         else{throw new Error('No data');}
+                    }
+                    else{throw new Error('No uid');}
+          }
+          catch(e){
+               helperReponse = new nexusResponse(1,true,e.message,null,{funcName:'getClusterConfigbyId',logMess:'data extraction failure'});
+          }
+          return helperReponse;
+     }
+
+     async getClusterConfigbyUid(got_uid){
+          let helperReponse = null;
+          try{
+                    if(got_uid){
+                         const collection = this.getClient().db('central_db').collection("cluster_config_collec").find({'creator_id':got_uid}); 
+                         let data = await collection.toArray();
+                         if(data.length==1)
+                         {
+                              //await this.buildClusterLinkArray(got_uid);
+                              helperReponse = new nexusResponse(0,false,null,data[0],{funcName:'getClusterConfigbyUid',logMess:'data extraction sucess'});
+                         }
+                         else if(data.length > 1){throw new Error('Multiple Config file found')}
+                         else{throw new Error('No data');}
+                    }
+                    else{throw new Error('No uid');}
+          }
+          catch(e){
+               helperReponse = new nexusResponse(1,true,e.message,null,{funcName:'getClusterConfigbyUid',logMess:'data extraction failure'});
+          }
+          return helperReponse;
+     }
+     async updateClusterConfig(got_uid,got_cluster_id,got_data){
+          let helperReponse = null;
+          try{  
+            if(got_uid && got_data){
+                  got_data.update_timestamp = Date.now();
+                  const filter = {_id:ObjectId(got_cluster_id)};
+                  const updateDocument = {$set: got_data,};
+                  const result = await this.getClient().db('central_db').collection("cluster_config_collec").updateOne(filter,updateDocument); 
+                    if(result){
+                      helperReponse = new nexusResponse(0,false,null,{editSuccessBool:true},{funcName:'updateClusterConfig',logMess:'data update success'});
+                    }else{throw new Error('Data update failure');  }
+                }else{throw new Error('No uid | data');}
+             }
+             catch(e){
+                  helperReponse = new nexusResponse(1,true,e.message,null,{funcName:'updateClusterConfig',logMess:'data update failure'});
+               }
+             return helperReponse;
+     } 
      async watchSpaceData(updateSpaceCronData){
           console.log('Watching space data changes');
           const collection = this.getClient().db('central_db').collection("user_space_collec");
@@ -39,6 +223,34 @@ module.exports = class DbClusterHelper{
                     updateSpaceCronData();
                }
           });
+     }
+     async getLinkDataById(id){
+          let helperReponse = null;
+          try{  
+            let foundData  = null;
+            if(this.getClient()){
+                  const collection = this.getClient().db('central_db').collection("link_collec").find({'_id':ObjectId(id)}); 
+                  let data = await collection.toArray();
+                    if(data.length==1){
+                      foundData = {gotData:data[0]}
+                      helperReponse = new nexusResponse(0,false,null,foundData,{funcName:'getLinkDataById',logMess:'data extraction success'});
+                    }
+                    else if(data.length>0){
+                         for(let i = 0 ; i < data.length ; i++){
+                              if(data[i].deleted_bool==false){
+                                   foundData = {gotData:data[i]}   
+                                   break;
+                              }
+                         }
+                         helperReponse = new nexusResponse(0,false,null,foundData,{funcName:'getLinkDataById',logMess:'data extraction success'});
+                    }
+                    else{throw new Error('No link data found')}
+            }else{throw new Error('No client')}
+          } 
+               catch(e){
+               helperReponse = new nexusResponse(1,true,e.message,null,{funcName:'getLinkDataById',logMess:'data extraction failure'});
+               }
+             return helperReponse;
      }
      async getLinkDataByUnique(unique_identifier){
           let helperReponse = null;
@@ -164,16 +376,17 @@ module.exports = class DbClusterHelper{
                const unique_identifier = randomstring.generate({length: 5,charset: 'alphabetic'});
          if(this.getClient()){
              if(got_uid && got_data){
+                    let userInfo = await this.getUserDatabyUid(got_uid);
                     got_data.creation_timestamp  = Date.now();
                     got_data.update_timestamp  = Date.now();
                     got_data.unique_identifier  = unique_identifier;
-
+                    got_data.cluster_config_id = userInfo.responseData.cluster_config_id;
 
                      const collection = this.getClient().db('central_db').collection("link_collec"); 
                      let result = await collection.insertOne(got_data);
                        if(result.insertedCount==1){
-                         this.logger.debug(`createLink: link created with unique identifier `+unique_identifier);
                          helperReponse = new nexusResponse(0,false,null,{linkCreated:true,unique_identifier:unique_identifier},{funcName:'makeLinkData',logMess:'data make success with unique id'+unique_identifier});
+                         await this.buildClusterLinkArray(got_uid,userInfo.responseData.cluster_config_id);
                      }
                     else{throw new Error('data insert failure');}
                     }else{throw new Error('Missing uid|data')}
@@ -236,7 +449,8 @@ module.exports = class DbClusterHelper{
                   const updateDocument = {$set: got_data,};
                   const result = await this.getClient().db('central_db').collection("link_collec").updateOne(filter,updateDocument); 
                     if(result){
-                      helperReponse = new nexusResponse(0,false,null,{editSuccessBool:true,uniKeyChangeBool:uniKeyChangeBool},{funcName:'updateLinkInfo',logMess:'data update success'});
+                      helperReponse = new nexusResponse(0,false,null,{editSuccessBool:true,uniKeyChangeBool:uniKeyChangeBool,deleted_bool:got_data.deleted_bool?got_data.deleted_bool:false},{funcName:'updateLinkInfo',logMess:'data update success'});
+                      if(got_data.deleted_bool){await this.buildClusterLinkArray(got_uid)}
                     }else{throw new Error('Data update failure');  }
                   }else{throw new Error('Unique id already exist');}
                 }else{throw new Error('No uid | data');}
@@ -434,6 +648,7 @@ module.exports = class DbClusterHelper{
                          const collection = this.getClient().db('central_db').collection("user_info_collec").find({'uid':got_uid}); 
                          let data = await collection.toArray();
                          if(data.length==1){helperReponse = new nexusResponse(0,false,null, data[0],{funcName:'getUserDatabyUid',logMess:'data extraction success'});}
+                         else if(data.length > 1){throw new Error('Mulitple user config')}
                          else{throw new Error('No data')}
                }   
                     else{throw new Error('No Uid')}
