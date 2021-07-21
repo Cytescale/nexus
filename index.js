@@ -224,7 +224,7 @@ class server_entry{
       res.send(serverReponse).status(200).end();
       next();
     })
-    router.get('/api/imageKitAuth',async(req,res,next)=>{
+    router.post('/api/getimageKitAuth',async(req,res,next)=>{
       var result = imagekit.getAuthenticationParameters();
       res.send(result).status(200).end();
       next();
