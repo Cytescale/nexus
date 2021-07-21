@@ -494,7 +494,7 @@ class server_entry{
     res.send(serverReponse).status(200).end();
     next();
     })
-    router.get('/api/updateUserData',async (req,res,next)=>{
+    router.post('/api/updateUserData',async (req,res,next)=>{
       TOTAL_REQUEST_COUNT++;
       let uid=req.body.uid;
       let update_data =req.body.update_data;
