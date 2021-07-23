@@ -5,21 +5,6 @@ const ObjectId =                       require('mongodb').ObjectId;
 const randomstring =                   require("randomstring");
 const nexusResponse =                  require("../../utils/resonseComposite");
 
-/*
-
-activity config 
-
-creator_id
-activity_id
-affected_link_id
-
-for_admin_bool
-
-creation_timestamp
-updated_timestamp
-
-
-*/
 
 const appID = 'd95380ef73954640840d0b042d9e128d';
 const appCertificate = '9be93592e761407daa9e7bb45c2d39d6';
@@ -33,6 +18,7 @@ module.exports = class DbClusterHelper{
      static client = null;
      changeStream  =null;
      logger = null;
+     
      constructor(client,logger){
        DbClusterHelper.client = client;
        this.logger = logger;
@@ -370,6 +356,7 @@ module.exports = class DbClusterHelper{
           }
           return helperReponse;
      }
+     
      async makeLinkData(got_uid,got_data){
           let helperReponse = null;
           try{  
@@ -660,6 +647,49 @@ module.exports = class DbClusterHelper{
           }
           return helperReponse;
      }
+     async makeUserData(got_uid,got_eml,login_method,userToken){
+          const api_key = randomstring.generate({length:32,charset: 'alphabetic'});
+          let got_data={
+               uid:got_uid,
+               email:got_eml,
+               login_method:login_method,
+               dname:'null',
+               admin_bool:false,
+               cname:'null',
+               init_bool:false,
+               uname:'null',
+               pro_bool:false,
+               deleted_bool:false,
+               bio:'null',
+               api_key:api_key,
+               pvt_bool:false,
+               pro_photo_url:"https://ik.imagekit.io/cyte/sakura/Men-Profile-Image_8c3Wj4y8S.png?updatedAt=1626883535964",
+               acc_verified:false,    
+          }
+          let helperReponse = null;
+          try{  
+               if(this.getClient()){
+                    if(got_uid && got_data){
+                    got_data.creation_timestamp  = Date.now();
+                    got_data.update_timestamp  = Date.now();
+                     const collection = this.getClient().db('central_db').collection("user_info_collec"); 
+                     let result = await collection.insertOne(got_data);
+                     if(result.insertedCount==1){
+                         await this.makeClusterConfig(got_uid);
+                         helperReponse = new nexusResponse(0,false,null,
+                         {uid:got_uid,userToken:userToken,account_created_bool:true},
+                         {funcName:'makeUserData',logMess:'data make success'});
+                     }
+                    else{throw new Error('data insert failure');}
+                    }else{throw new Error('Missing uid|data')}
+                    }else{throw new Error('No client')}
+          }
+          catch(e){
+                    helperReponse = new nexusResponse(1,true,e.message,null,{funcName:'makeUserData',logMess:'data make failure'});
+          }
+          return helperReponse;
+     }
+
      
    }
 

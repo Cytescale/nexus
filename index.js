@@ -34,7 +34,7 @@ const imagekit = new ImageKit({
 });  
 
 log4js.configure({
-  appenders: { everything: { type: 'file',filename: "./logs/overall_server_3.log" } },
+  appenders: { everything: { type: 'file',filename: "./logs/overall_server_4.log" } },
   categories: { default: { appenders: [ 'everything' ], level: 'debug' } }
 });
 
@@ -87,6 +87,7 @@ let allowedRoutes = {
   makeRelationData:true,
   makeSpaceData:true,
   makeLinkData:true,
+  makeUserData:true,
 
   updateSpaceData:true,
   updateUserData:true,
@@ -112,9 +113,9 @@ let allowedRoutes = {
   checkURLData:true,
 
 }
-  
-var dbClusterHelper =  new DbClusterHelper(client,logger);
+
 var firebaseHelper =  new FirebaseHelper(logger);
+var dbClusterHelper =  new DbClusterHelper(client,logger);
 var linkHelper =      new LinkHelper(logger);
 var rtcCron =         new RtcCron(logger,dbClusterHelper);
 
@@ -258,6 +259,24 @@ class server_entry{
         else{serverReponse = new nexusResponse(1,true,'Route is closed',null);}
         serverReponse.errBool?TOTAL_FAILUER_PASS++:TOTAL_SUCESS_PASS++;
         res.send(serverReponse).status(200).end();
+         next();
+    })
+    router.post('/api/createaccount',async (req,res,next)=>{
+      TOTAL_REQUEST_COUNT++; 
+      let serverReponse = null;
+      let uid=req.body.uid;
+      let eml=req.body.email;
+      let ac_mth=req.body.signup_method;
+      let userToken = req.body.userToken;
+      if(allowedRoutes.makeUserData){
+        if(uid&&eml&&userToken){
+          let resData = await dbClusterHelper.makeUserData(uid,eml,ac_mth,userToken);
+          if(!resData.errBool){serverReponse = new nexusResponse(0,false,null,resData.responseData);}
+          else{serverReponse = new nexusResponse(10,true,resData.errMess,null);}}
+          else{serverReponse = new nexusResponse(2,true,'Missing Data',null);}}
+          else{serverReponse = new nexusResponse(1,true,'Route is closed',null);}
+      serverReponse.errBool?TOTAL_FAILUER_PASS++:TOTAL_SUCESS_PASS++;
+      res.send(serverReponse).status(200).end();
          next();
     })
     router.post('/api/getLinksData',async (req,res,next)=>{
