@@ -454,7 +454,7 @@ class server_entry{
       if(resData.responseData.gotData.deleted_bool){res.send('Link Deleted').end();return;}
       if(!resData.responseData.gotData.active_bool){res.send('Link Disabled').end();return;}
       if(!resData.responseData.gotData.deeplink_bool){res.redirect(resData.responseData.gotData.link_dest);return;}
-      console.log(resData.responseData.gotData);
+      // console.log(resData.responseData.gotData);
       let ua = parser(req.headers['user-agent']); 
       let redirectData  = await linkHelper.visitLinkParser(resData.responseData.gotData,ua.os.name)
       if(!redirectData.errBool){

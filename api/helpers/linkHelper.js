@@ -2,9 +2,11 @@ const randomstring =                   require("randomstring");
 const nexusResponse =                  require("../../utils/resonseComposite");
 const URLParser =                       require('url-parse')
 const queryString = require('query-string');
+const axios =                                require('axios').default;
 
 
 /*
+    url: 'http://api.instagram.com/oembed?callback=&url=http://instagram.com/p/Y7GF-5vftL‌​/',     
 
 
 https://www.instagram.com/p/CQ1AzV3j635/?utm_medium=copy_link
@@ -187,6 +189,7 @@ module.exports = class LinkHelper{
                     /*youtube response */
                     let visit_parse_url = new URLParser(linkData.link_dest);
                     const val = await this.visitYoutubeLinkParser(visit_parse_url);
+                
                     androidLink = `intent://www.youtube.com/${val.actionType}/${val.actionId}#Intent;package=com.google.android.youtube;scheme=https;end`;
                     iosLink = `vnd.youtube://www.youtube.com/${val.actionType}/${val.actionId}`;
                     helperReponse = new nexusResponse(0,false,null,
@@ -198,9 +201,17 @@ module.exports = class LinkHelper{
                     /*instgram response */
                     let visit_parse_url = new URLParser(linkData.link_dest);
                     const val = await this.visitInstgramLinkParser(visit_parse_url);
-                    console.log(val);
+                    let media_id = null;
+                    await axios.get(`http://api.instagram.com/oembed?callback=&url=${linkData.link_dest}`)
+                       .then(function (response) {
+                         media_id = response.data.media_id;
+                       })
+                       .catch(function (error) {
+                         throw new Error(error);
+                       })
+                    console.log(media_id);
                     androidLink = `intent://www.instagram.com/${val.actionType}/${val.actionId}#Intent;package=com.instagram.android;scheme=https;end`;
-                    iosLink = `vnd.instagram://www.instagram.com/${val.actionType}/${val.actionId}`;
+                    iosLink = `instagram://media?id=${media_id}&utm_medium=copy_link`;
                     helperReponse = new nexusResponse(0,false,null,
                          {iosLink:iosLink,androidLink:androidLink}
                          ,{funcName:'visitLinkParser',logMess:'URL parsing Failure'});
