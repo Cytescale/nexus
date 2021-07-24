@@ -137,16 +137,11 @@ module.exports = class LinkHelper{
                     break;
                }
           }
-
-          console.log(identified_domain_id);
-          console.log(path);
-    
           switch(identified_domain_id){
                case 0:
                case 1:{
                     const query = queryString.parse(visit_parse_url.query)
                     let fi = null;
-                    console.log(query);
                     for(let i = 0 ;i < VALID_INSTA_PATHNAMES.length;i++){
                          if(path==VALID_INSTA_PATHNAMES[i]){fi=i;}
                     }   
@@ -159,7 +154,7 @@ module.exports = class LinkHelper{
                               break;
                          }
                          default:{
-                              actionType='p';
+                              actionType='p2';
                               actionId=visit_parse_url.pathname.split("/")[1];
                               break;
                          }      
@@ -201,17 +196,33 @@ module.exports = class LinkHelper{
                     /*instgram response */
                     let visit_parse_url = new URLParser(linkData.link_dest);
                     const val = await this.visitInstgramLinkParser(visit_parse_url);
+                    console.log(val);
                     let media_id = null;
-                    await axios.get(`http://api.instagram.com/oembed?callback=&url=${linkData.link_dest}`)
-                       .then(function (response) {
-                         media_id = response.data.media_id;
-                       })
-                       .catch(function (error) {
-                         throw new Error(error);
-                       })
-                    console.log(media_id);
+                    let iosLink = null;
+                    switch(val.actionType){
+                         case 'p2':{
+                              iosLink = `instagram://user?username=${val.actionId}`;
+                              break;
+                         }
+                         default:{
+                              await axios.get(`http://api.instagram.com/oembed?callback=&url=${linkData.link_dest}`)
+                              .then(function (response) {
+                                media_id = response.data.media_id;
+                                console.log(media_id);
+                              })
+                              .catch(function (error) {
+                                   media_id=null;
+                              })
+                              if(media_id){
+                                   iosLink = `instagram://media?id=${media_id}&utm_medium=copy_link`;
+                              }else{
+                                   iosLink=  'instagram://media?id=%3C!DOCTYPE%20html%3E%3Chtml%20lang=';
+                              }
+                              break;
+                         }
+                    }
+                    console.log(iosLink);
                     androidLink = `intent://www.instagram.com/${val.actionType}/${val.actionId}#Intent;package=com.instagram.android;scheme=https;end`;
-                    iosLink = `instagram://media?id=${media_id}&utm_medium=copy_link`;
                     helperReponse = new nexusResponse(0,false,null,
                          {iosLink:iosLink,androidLink:androidLink}
                          ,{funcName:'visitLinkParser',logMess:'URL parsing Failure'});
