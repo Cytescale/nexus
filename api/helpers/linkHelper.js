@@ -4,14 +4,21 @@ const URLParser =                       require('url-parse')
 const queryString = require('query-string');
 
 
-//https://youtu.be/N9PMmDPO-8U
-//https://m.youtube.com/watch?v=Cbnjj4ADdNw
+/*
+
+
+https://www.instagram.com/p/CQ1AzV3j635/?utm_medium=copy_link
+https://instagram.com/username?utm_medium=copy_link
+https://instagram.com/stories/u/2609124446563142090?utm_source=ig_story_item_share&utm_medium=copy_link
+https://www.instagram.com/reel/CQjNjbRpOhC/?utm_medium=copy_link
+
+*/
 
 /*        
                PLATFORM INDEX
                
                YOUTUBE 1
-
+               INSTAGRAM 2
 
 
 */
@@ -30,10 +37,27 @@ const VALID_YOUTUBE_DOMAINS=[
      'm.youtube.com',
      'youtube.googleapis.com',
      'youtubei.googleapis.com',
+
+]
+
+
+const VALID_INSTA_PATHNAMES=[
+     'p',
+     'stories',
+     'reel'
+]
+
+const VALID_INSTA_DOMAINS=[
+     'www.instagram.com',
+     'instagram.com',
+     'cdninstagram.com',
+     'instagram.c10r.facebook.com',
+     'z-p42-instagram.c10r.facebook.com'
 ]
 
 const VALID_DOMAINS = [
      VALID_YOUTUBE_DOMAINS,
+     VALID_INSTA_DOMAINS
 ]
 
 module.exports = class LinkHelper{
@@ -100,14 +124,57 @@ module.exports = class LinkHelper{
           }
           
      }
+     async visitInstgramLinkParser(visit_parse_url){
+          const path  = visit_parse_url.pathname.split("/")[1]
+          let identified_domain_id = null;
+          let actionType = null;
+          let actionId = null;
+          for(let j = 0 ; j < VALID_INSTA_DOMAINS.length; j++){
+               if(VALID_INSTA_DOMAINS[j]==visit_parse_url.hostname){
+                    identified_domain_id = j;
+                    break;
+               }
+          }
 
-/*
-
-intent://www.youtube.com/channel/UC20LoHy2mX0LQODrkUalxVQ#Intent;package=com.google.android.youtube;scheme=https;end
-vnd.youtube://www.youtube.com/channel/UC20LoHy2mX0LQODrkUalxVQ
-
- */
-
+          console.log(identified_domain_id);
+          console.log(path);
+    
+          switch(identified_domain_id){
+               case 0:
+               case 1:{
+                    const query = queryString.parse(visit_parse_url.query)
+                    let fi = null;
+                    console.log(query);
+                    for(let i = 0 ;i < VALID_INSTA_PATHNAMES.length;i++){
+                         if(path==VALID_INSTA_PATHNAMES[i]){fi=i;}
+                    }   
+                    switch(fi){
+                         case 0:
+                         case 1:
+                         case 2:{
+                              actionType=visit_parse_url.pathname.split("/")[1];
+                              actionId=visit_parse_url.pathname.split("/")[2];
+                              break;
+                         }
+                         default:{
+                              actionType='p';
+                              actionId=visit_parse_url.pathname.split("/")[1];
+                              break;
+                         }      
+                    }
+                  break;
+               }
+               default:{
+               
+                    break;
+               }
+          }
+          return{
+               actionType:actionType,
+               actionId:actionId
+          }
+          
+     }
 
 
      async visitLinkParser(linkData,client_os){
@@ -122,6 +189,18 @@ vnd.youtube://www.youtube.com/channel/UC20LoHy2mX0LQODrkUalxVQ
                     const val = await this.visitYoutubeLinkParser(visit_parse_url);
                     androidLink = `intent://www.youtube.com/${val.actionType}/${val.actionId}#Intent;package=com.google.android.youtube;scheme=https;end`;
                     iosLink = `vnd.youtube://www.youtube.com/${val.actionType}/${val.actionId}`;
+                    helperReponse = new nexusResponse(0,false,null,
+                         {iosLink:iosLink,androidLink:androidLink}
+                         ,{funcName:'visitLinkParser',logMess:'URL parsing Failure'});
+                    break;
+               }
+               case 2:{
+                    /*instgram response */
+                    let visit_parse_url = new URLParser(linkData.link_dest);
+                    const val = await this.visitInstgramLinkParser(visit_parse_url);
+                    console.log(val);
+                    androidLink = `intent://www.instagram.com/${val.actionType}/${val.actionId}#Intent;package=com.instagram.android;scheme=https;end`;
+                    iosLink = `vnd.instagram://www.instagram.com/${val.actionType}/${val.actionId}`;
                     helperReponse = new nexusResponse(0,false,null,
                          {iosLink:iosLink,androidLink:androidLink}
                          ,{funcName:'visitLinkParser',logMess:'URL parsing Failure'});
@@ -174,8 +253,6 @@ vnd.youtube://www.youtube.com/channel/UC20LoHy2mX0LQODrkUalxVQ
           let parse_validity  = false;
           try{ 
                let parsed_url = new URLParser(url);     
-               
-
                for (let i = 0 ; i < VALID_DOMAINS.length ; i++){
                     for(let j = 0 ; j < VALID_DOMAINS[i].length; j++){
                          if(VALID_DOMAINS[i][j]==parsed_url.hostname){
@@ -190,7 +267,7 @@ vnd.youtube://www.youtube.com/channel/UC20LoHy2mX0LQODrkUalxVQ
                if(valid_url){ parse_validity = await this.parseYoutubeUrlBool(parsed_url,identified_domain_id);}
 
                helperReponse = new nexusResponse(0,false,null,
-               {valid_url:valid_url,identified_platform_id:platform_id,parse_validity:parse_validity},
+               {valid_url:valid_url,identified_platform_id:platform_id,parse_validity:true},
                {funcName:'getSpaceDatabySid',logMess:'URL Validity Checking success'});
           }    
           catch(e){
