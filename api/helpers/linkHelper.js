@@ -478,8 +478,8 @@ module.exports = class LinkHelper{
                          case 'playlist':
                          case 'show':
                          case 'track':{
-                              iosLink = `spotify://${visit_parse_url.pathname}`;
-                              androidLink = `spotify://${visit_parse_url.pathname}`;
+                              iosLink = `spotify:/${visit_parse_url.pathname}`;
+                              androidLink = `spotify:/${visit_parse_url.pathname}`;
                               break;
                          }
                          default:{
