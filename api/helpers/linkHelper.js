@@ -207,7 +207,7 @@ module.exports = class LinkHelper{
                               break;
                          }
                          case 's':{
-                              iosLink = `instagram://media?id=${val.actionId}${visit_parse_url.query}`;
+                              iosLink = `instagram://media?id=s${val.actionId}${visit_parse_url.query}`;
                               break;
                          }
                          default:{
