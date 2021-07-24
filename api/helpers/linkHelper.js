@@ -6,14 +6,9 @@ const axios =                                require('axios').default;
 
 
 /*
-https://twitter.com/gamespot/status/1418571682378309639?s=21
-https://twitter.com/delltechindia?s=21
-https://twitter.com/rajeshjaney/status/1417466975257653252?s=21
-https://twitter.com/search?q="22OUT%20NOW"
 
-twitter://user?screen_name=nodejs
-twitter://status?id=1418571682378309639&s=21
-twitter://search?query=%22OUT%20NOW%22&q=%22OUT%20NOW%22
+https://open.spotify.com/playlist/37i9dQZF1E37q9vD8nNRdL?si=0578c92e488448da
+https://open.spotify.com/artist/1SJOL9HJ08YOn92lFcYf8a?si=wXDTz7XpRLG2ucTAess_FA&dl_branch=1
 
 */
 
@@ -23,6 +18,8 @@ twitter://search?query=%22OUT%20NOW%22&q=%22OUT%20NOW%22
                YOUTUBE 1
                INSTAGRAM 2
                TWITTER 3
+               PINTREST 4
+               SPOTIFY 5
      
 */
 
@@ -32,18 +29,16 @@ const VALID_YOUTUBE_PATHNAMES=[
      'user',
      'channel'
 ]
-
-const VALID_YOUTUBE_DOMAINS=[
-     'youtu.be',
-     'youtube.com',
-     'www.youtube.com',
-     'm.youtube.com',
-     'youtube.googleapis.com',
-     'youtubei.googleapis.com',
-
+const VALID_PINTR_PATHNAMES=[
+     'pin',     
 ]
+const VALID_TWIT_PATHNAMES=[
+     'status',
+     'hashtag',
+     'search',
 
-
+     
+]
 const VALID_INSTA_PATHNAMES=[
      'p',
      's',
@@ -53,13 +48,28 @@ const VALID_INSTA_PATHNAMES=[
      'reel'
 ]
 
+const VALID_SPOTI_PATHNAMES=[
+     'album',
+     'artist',     
+     'playlist',
+     'show',
+     'track',
+     'episode',
+]
 
-const VALID_TWIT_PATHNAMES=[
-     'status',
-     'hashtag',
-     'search',
 
-     
+const VALID_TWIT_DOMAINS=[
+     'www.twitter.com',
+     'twitter.com'
+]
+const VALID_YOUTUBE_DOMAINS=[
+     'youtu.be',
+     'youtube.com',
+     'www.youtube.com',
+     'm.youtube.com',
+     'youtube.googleapis.com',
+     'youtubei.googleapis.com',
+
 ]
 const VALID_INSTA_DOMAINS=[
      'www.instagram.com',
@@ -69,15 +79,22 @@ const VALID_INSTA_DOMAINS=[
      'z-p42-instagram.c10r.facebook.com'
 ]
 
-const VALID_TWIT_DOMAINS=[
-     'www.twitter.com',
-     'twitter.com'
+const VALID_PINTR_DOMAINS=[
+     'www.pinterest.com',
+     'pinterest.com',
+     'in.pinterest.com',
 ]
+const VALID_SPOTI_DOMAINS=[
+     'open.spotify.com',
+]
+
 
 const VALID_DOMAINS = [
      VALID_YOUTUBE_DOMAINS,
      VALID_INSTA_DOMAINS,
-     VALID_TWIT_DOMAINS
+     VALID_TWIT_DOMAINS,
+     VALID_PINTR_DOMAINS,
+     VALID_SPOTI_DOMAINS
 ]
 
 module.exports = class LinkHelper{
@@ -213,9 +230,11 @@ module.exports = class LinkHelper{
                     switch(fi){
                          case 0:{
                               console.log('status');
+                              break;
                          }
                          case 1:{
 
+                              break;
                          }
                          case 2:{
                               
@@ -245,7 +264,100 @@ module.exports = class LinkHelper{
           
      }
 
-
+     async visitPintrLinkParser(visit_parse_url){
+          const path  = visit_parse_url.pathname.split("/")[1]
+          let identified_domain_id = null;
+          let actionType = null;
+          let actionId = null;
+          for(let j = 0 ; j < VALID_PINTR_DOMAINS.length; j++){
+               if(VALID_PINTR_DOMAINS[j]==visit_parse_url.hostname){
+                    identified_domain_id = j;
+                    break;
+               }
+          }
+          switch(identified_domain_id){
+               case 0:
+               case 1:
+               case 2:{
+                    const query = queryString.parse(visit_parse_url.query)
+                    let fi = null;
+                    for(let i = 0 ;i < VALID_PINTR_PATHNAMES.length;i++){
+                         if(path==VALID_PINTR_PATHNAMES[i]){fi=i;}
+                    }   
+                    
+                    switch(fi){
+                         case 0:{
+                              actionType='pin';
+                              actionId=visit_parse_url.pathname.split("/")[2];
+                              break;
+                         }
+                         default:{
+                                   actionType='p2';
+                                   actionId=visit_parse_url.pathname;
+                              break;
+                         }      
+                    }
+                  break;
+               }
+               default:{
+               
+                    break;
+               }
+          }
+          return{
+               actionType:actionType,
+               actionId:actionId
+          }
+          
+     }
+     async visitSpotiLinkParser(visit_parse_url){
+          const path  = visit_parse_url.pathname.split("/")[1]
+          let identified_domain_id = null;
+          let actionType = null;
+          let actionId = null;
+          for(let j = 0 ; j < VALID_SPOTI_DOMAINS.length; j++){
+               if(VALID_SPOTI_DOMAINS[j]==visit_parse_url.hostname){
+                    identified_domain_id = j;
+                    break;
+               }
+          }
+          switch(identified_domain_id){
+               case 0:{
+                    console.log('domain is');
+                    const query = queryString.parse(visit_parse_url.query)
+                    let fi = null;
+                    for(let i = 0 ;i < VALID_SPOTI_PATHNAMES.length;i++){
+                         if(path==VALID_SPOTI_PATHNAMES[i]){fi=i;}
+                    }   
+                    switch(fi){
+                         case 0:
+                         case 1:
+                         case 2:
+                         case 3:
+                         case 4: {
+                              actionType=visit_parse_url.pathname.split("/")[1];
+                              actionId=visit_parse_url.pathname.split("/")[2];
+                              break;
+                         }
+                         default:{
+                                   actionType='p2';
+                                   actionId=visit_parse_url.pathname;
+                              break;
+                         }      
+                    }
+                  break;
+               }
+               default:{
+               
+                    break;
+               }
+          }
+          return{
+               actionType:actionType,
+               actionId:actionId
+          }
+          
+     }
      async visitLinkParser(linkData,client_os){
           let helperReponse = null;
           let iosLink = null;
@@ -321,6 +433,61 @@ module.exports = class LinkHelper{
                          }
                     }
 
+                    helperReponse = new nexusResponse(0,false,null,
+                         {iosLink:iosLink,androidLink:androidLink}
+                         ,{funcName:'visitLinkParser',logMess:'URL parsing Failure'});
+                    break;
+               }  
+               case 4:{
+                    let visit_parse_url = new URLParser(linkData.link_dest);
+                    const val = await this.visitPintrLinkParser(visit_parse_url);
+                    console.log(visit_parse_url);
+                    switch(val.actionType){
+                         case 'p2':{
+                              iosLink = `pinterest://user${val.actionId}`;
+                              androidLink = `pinterest://in.pinterest.com${val.actionId}`;
+                              break;
+                         }case'pin':{
+                              iosLink = `pinterest://pin/${val.actionId}`;
+                              androidLink = `intent://www.pinterest.com/pin/${val.actionType}/#Intent;package=com.pinterest;scheme=https;end`;
+                              break;
+                         }
+                         default:{
+                              break;
+                         }
+                    }
+                    console.log(iosLink);
+                    console.log(androidLink);
+                    helperReponse = new nexusResponse(0,false,null,
+                         {iosLink:iosLink,androidLink:androidLink}
+                         ,{funcName:'visitLinkParser',logMess:'URL parsing Failure'});
+                    break;
+               }   
+               case 5:{
+                    let visit_parse_url = new URLParser(linkData.link_dest);
+                    const val = await this.visitSpotiLinkParser(visit_parse_url);
+                    console.log(visit_parse_url);
+                    switch(val.actionType){
+                         case 'p2':{
+                            
+                              break;
+                         }
+                         case 'pin':
+                         case 'album':
+                         case 'artist':   
+                         case 'playlist':
+                         case 'show':
+                         case 'track':{
+                              iosLink = `spotify://${visit_parse_url.pathname}`;
+                              androidLink = `spotify://${visit_parse_url.pathname}`;
+                              break;
+                         }
+                         default:{
+                              break;
+                         }
+                    }
+                    console.log(iosLink);
+                    console.log(androidLink);
                     helperReponse = new nexusResponse(0,false,null,
                          {iosLink:iosLink,androidLink:androidLink}
                          ,{funcName:'visitLinkParser',logMess:'URL parsing Failure'});

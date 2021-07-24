@@ -477,7 +477,9 @@ class server_entry{
             }
         }
       }
-      else{res.send('Link Parsing error , We apppologise for inconvience ').end();return;}
+      else{
+        // console.log(redirectData.errMess
+        res.send('Link Parsing error , We apppologise for inconvience ').end();return;}
       next();
     })
     router.get('/api/getFollowCount',async(req,res,next)=>{
