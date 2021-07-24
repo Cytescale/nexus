@@ -449,7 +449,7 @@ module.exports = class LinkHelper{
                               break;
                          }case'pin':{
                               iosLink = `pinterest://pin/${val.actionId}`;
-                              androidLink = `intent://www.pinterest.com/pin/${val.actionType}/#Intent;package=com.pinterest;scheme=https;end`;
+                              androidLink = `intent://www.pinterest.com/pin/${val.actionId}/#Intent;package=com.pinterest;scheme=https;end`;
                               break;
                          }
                          default:{
