@@ -200,17 +200,19 @@ module.exports = class LinkHelper{
                     console.log(visit_parse_url);
                     console.log(val);
                     let media_id = null;
-                    let iosLink = null;
                     switch(val.actionType){
                          case 'p2':{
                               iosLink = `instagram://user?username=${val.actionId}`;
+                              androidLink = `intent://www.instagram.com/${val.actionId}${visit_parse_url.query}#Intent;package=com.instagram.android;scheme=https;end`;
                               break;
                          }
                          case 's':{
                               iosLink = `instagram://user?username=s${val.actionId}${visit_parse_url.query}`;
+                              androidLink = `intent://www.instagram.com/${val.actionType}/${val.actionId}${visit_parse_url.query}#Intent;package=com.instagram.android;scheme=https;end`;
                               break;
                          }
                          default:{
+                              androidLink = `intent://www.instagram.com/${val.actionType}/${val.actionId}${visit_parse_url.query}#Intent;package=com.instagram.android;scheme=https;end`;
                               await axios.get(`http://api.instagram.com/oembed?callback=&url=${linkData.link_dest}`)
                               .then(function (response) {
                                 media_id = response.data.media_id;
@@ -228,7 +230,8 @@ module.exports = class LinkHelper{
                          }
                     }
                     console.log(iosLink);
-                    androidLink = `intent://www.instagram.com/${val.actionType}/${val.actionId}${visit_parse_url.query}#Intent;package=com.instagram.android;scheme=https;end`;
+
+                    console.log(androidLink);
                     helperReponse = new nexusResponse(0,false,null,
                          {iosLink:iosLink,androidLink:androidLink}
                          ,{funcName:'visitLinkParser',logMess:'URL parsing Failure'});
