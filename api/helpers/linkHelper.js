@@ -305,20 +305,16 @@ module.exports = class LinkHelper{
                case 3:{
                     let visit_parse_url = new URLParser(linkData.link_dest);
                     const val = await this.visitTwitLinkParser(visit_parse_url);
-                
-                    // twitter://user?screen_name=nodejs
-                    // twitter://status?id=1418571682378309639&s=21
-                    // twitter://search?query=%22OUT%20NOW%22&q=%22OUT%20NOW%22
-
-                    console.log(val);
+                    console.log(visit_parse_url);
                     switch(val.actionType){
                          case 'p2':{
                               iosLink = `twitter://user?screen_name=${val.actionId}`;
                               androidLink = `intent://twitter.com/${val.actionId}${visit_parse_url.query}#Intent;package=com.twitter.android;scheme=https;end`;
                               break;
                          }case'status':{
+                              const path  = visit_parse_url.pathname.split("/")[1]
                               iosLink = `twitter://status?id=${val.actionId}`;
-                              androidLink = `intent://twitter.com/${val.actionType}/${val.actionId}${visit_parse_url.query}#Intent;package=com.twitter.android;scheme=https;end`;
+                              androidLink = `intent://twitter.com/${path}/${val.actionType}/${val.actionId}${visit_parse_url.query}#Intent;package=com.twitter.android;scheme=https;end`;
                          }
                          default:{
                               break;
