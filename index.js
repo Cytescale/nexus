@@ -469,8 +469,7 @@ class server_entry{
               break;
             }
             case 'Windows':{
-              //res.redirect(resData.responseData.gotData.link_dest);
-              res.redirect(resData.responseData.gotData.androidLink);
+              res.redirect(resData.responseData.gotData.link_dest);
               break;
             }
             default:{

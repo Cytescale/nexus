@@ -6,13 +6,14 @@ const axios =                                require('axios').default;
 
 
 /*
-    url: 'http://api.instagram.com/oembed?callback=&url=http://instagram.com/p/Y7GF-5vftL‌​/',     
+https://twitter.com/gamespot/status/1418571682378309639?s=21
+https://twitter.com/delltechindia?s=21
+https://twitter.com/rajeshjaney/status/1417466975257653252?s=21
+https://twitter.com/search?q="22OUT%20NOW"
 
-
-https://www.instagram.com/p/CQ1AzV3j635/?utm_medium=copy_link
-https://instagram.com/username?utm_medium=copy_link
-https://instagram.com/stories/u/2609124446563142090?utm_source=ig_story_item_share&utm_medium=copy_link
-https://www.instagram.com/reel/CQjNjbRpOhC/?utm_medium=copy_link
+twitter://user?screen_name=nodejs
+twitter://status?id=1418571682378309639&s=21
+twitter://search?query=%22OUT%20NOW%22&q=%22OUT%20NOW%22
 
 */
 
@@ -21,8 +22,8 @@ https://www.instagram.com/reel/CQjNjbRpOhC/?utm_medium=copy_link
                
                YOUTUBE 1
                INSTAGRAM 2
-
-
+               TWITTER 3
+     
 */
 
 const VALID_YOUTUBE_PATHNAMES=[
@@ -47,9 +48,19 @@ const VALID_INSTA_PATHNAMES=[
      'p',
      's',
      'stories',
+     'tv',
+     'tag',
      'reel'
 ]
 
+
+const VALID_TWIT_PATHNAMES=[
+     'status',
+     'hashtag',
+     'search',
+
+     
+]
 const VALID_INSTA_DOMAINS=[
      'www.instagram.com',
      'instagram.com',
@@ -58,9 +69,15 @@ const VALID_INSTA_DOMAINS=[
      'z-p42-instagram.c10r.facebook.com'
 ]
 
+const VALID_TWIT_DOMAINS=[
+     'www.twitter.com',
+     'twitter.com'
+]
+
 const VALID_DOMAINS = [
      VALID_YOUTUBE_DOMAINS,
-     VALID_INSTA_DOMAINS
+     VALID_INSTA_DOMAINS,
+     VALID_TWIT_DOMAINS
 ]
 
 module.exports = class LinkHelper{
@@ -173,6 +190,60 @@ module.exports = class LinkHelper{
           }
           
      }
+     async visitTwitLinkParser(visit_parse_url){
+          const path  = visit_parse_url.pathname.split("/")[1]
+          let identified_domain_id = null;
+          let actionType = null;
+          let actionId = null;
+          for(let j = 0 ; j < VALID_TWIT_DOMAINS.length; j++){
+               if(VALID_TWIT_DOMAINS[j]==visit_parse_url.hostname){
+                    identified_domain_id = j;
+                    break;
+               }
+          }
+          switch(identified_domain_id){
+               case 0:
+               case 1:{
+                    const query = queryString.parse(visit_parse_url.query)
+                    let fi = null;
+                    for(let i = 0 ;i < VALID_TWIT_PATHNAMES.length;i++){
+                         if(path==VALID_TWIT_PATHNAMES[i]){fi=i;}
+                    }   
+                    
+                    switch(fi){
+                         case 0:{
+                              console.log('status');
+                         }
+                         case 1:{
+
+                         }
+                         case 2:{
+                              
+                              break;
+                         }
+                         default:{
+                              actionType=visit_parse_url.pathname.split("/")[2];
+                              actionId=visit_parse_url.pathname.split("/")[3];
+                              if(!actionType){
+                                   actionType='p2';
+                                   actionId=path;
+                              }
+                              break;
+                         }      
+                    }
+                  break;
+               }
+               default:{
+               
+                    break;
+               }
+          }
+          return{
+               actionType:actionType,
+               actionId:actionId
+          }
+          
+     }
 
 
      async visitLinkParser(linkData,client_os){
@@ -197,8 +268,6 @@ module.exports = class LinkHelper{
                     /*instgram response */
                     let visit_parse_url = new URLParser(linkData.link_dest);
                     const val = await this.visitInstgramLinkParser(visit_parse_url);
-                    console.log(visit_parse_url);
-                    console.log(val);
                     let media_id = null;
                     switch(val.actionType){
                          case 'p2':{
@@ -215,8 +284,7 @@ module.exports = class LinkHelper{
                               androidLink = `intent://www.instagram.com/${val.actionType}/${val.actionId}${visit_parse_url.query}#Intent;package=com.instagram.android;scheme=https;end`;
                               await axios.get(`http://api.instagram.com/oembed?callback=&url=${linkData.link_dest}`)
                               .then(function (response) {
-                                media_id = response.data.media_id;
-                                console.log(media_id);
+                                media_id = response.data.media_id; 
                               })
                               .catch(function (error) {
                                    media_id=null;
@@ -229,9 +297,34 @@ module.exports = class LinkHelper{
                               break;
                          }
                     }
-                    console.log(iosLink);
+                    helperReponse = new nexusResponse(0,false,null,
+                         {iosLink:iosLink,androidLink:androidLink}
+                         ,{funcName:'visitLinkParser',logMess:'URL parsing Failure'});
+                    break;
+               }
+               case 3:{
+                    let visit_parse_url = new URLParser(linkData.link_dest);
+                    const val = await this.visitTwitLinkParser(visit_parse_url);
+                
+                    // twitter://user?screen_name=nodejs
+                    // twitter://status?id=1418571682378309639&s=21
+                    // twitter://search?query=%22OUT%20NOW%22&q=%22OUT%20NOW%22
 
-                    console.log(androidLink);
+                    console.log(val);
+                    switch(val.actionType){
+                         case 'p2':{
+                              iosLink = `twitter://user?screen_name=${val.actionId}`;
+                              androidLink = `intent://twitter.com/${val.actionId}${visit_parse_url.query}#Intent;package=com.twitter.android;scheme=https;end`;
+                              break;
+                         }case'status':{
+                              iosLink = `twitter://status?id=${val.actionId}`;
+                              androidLink = `intent://twitter.com/${val.actionType}/${val.actionId}${visit_parse_url.query}#Intent;package=com.twitter.android;scheme=https;end`;
+                         }
+                         default:{
+                              break;
+                         }
+                    }
+
                     helperReponse = new nexusResponse(0,false,null,
                          {iosLink:iosLink,androidLink:androidLink}
                          ,{funcName:'visitLinkParser',logMess:'URL parsing Failure'});
