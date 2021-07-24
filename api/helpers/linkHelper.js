@@ -45,6 +45,7 @@ const VALID_YOUTUBE_DOMAINS=[
 
 const VALID_INSTA_PATHNAMES=[
      'p',
+     's',
      'stories',
      'reel'
 ]
@@ -196,12 +197,17 @@ module.exports = class LinkHelper{
                     /*instgram response */
                     let visit_parse_url = new URLParser(linkData.link_dest);
                     const val = await this.visitInstgramLinkParser(visit_parse_url);
+                    console.log(visit_parse_url);
                     console.log(val);
                     let media_id = null;
                     let iosLink = null;
                     switch(val.actionType){
                          case 'p2':{
                               iosLink = `instagram://user?username=${val.actionId}`;
+                              break;
+                         }
+                         case 's':{
+                              iosLink = `instagram://media?id=${val.actionId}${visit_parse_url.query}`;
                               break;
                          }
                          default:{
@@ -222,7 +228,7 @@ module.exports = class LinkHelper{
                          }
                     }
                     console.log(iosLink);
-                    androidLink = `intent://www.instagram.com/${val.actionType}/${val.actionId}#Intent;package=com.instagram.android;scheme=https;end`;
+                    androidLink = `intent://www.instagram.com/${val.actionType}/${val.actionId}${visit_parse_url.query}#Intent;package=com.instagram.android;scheme=https;end`;
                     helperReponse = new nexusResponse(0,false,null,
                          {iosLink:iosLink,androidLink:androidLink}
                          ,{funcName:'visitLinkParser',logMess:'URL parsing Failure'});
