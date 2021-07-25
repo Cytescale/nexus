@@ -4,6 +4,7 @@ const {RtcTokenBuilder,
 const ObjectId =                       require('mongodb').ObjectId; 
 const randomstring =                   require("randomstring");
 const nexusResponse =                  require("../../utils/resonseComposite");
+const { uniqueNamesGenerator, adjectives, colors, animals,starWars } = require('unique-names-generator');
 
 
 const appID = 'd95380ef73954640840d0b042d9e128d';
@@ -649,6 +650,7 @@ module.exports = class DbClusterHelper{
      }
      async makeUserData(got_uid,got_eml,login_method,userToken){
           const api_key = randomstring.generate({length:32,charset: 'alphabetic'});
+          const randomName = uniqueNamesGenerator({ dictionaries: [adjectives,starWars] ,style: 'lowerCase'}); 
           let got_data={
                uid:got_uid,
                email:got_eml,
@@ -657,7 +659,7 @@ module.exports = class DbClusterHelper{
                admin_bool:false,
                cname:'null',
                init_bool:false,
-               uname:'null',
+               uname:randomName,
                pro_bool:false,
                deleted_bool:false,
                bio:'null',

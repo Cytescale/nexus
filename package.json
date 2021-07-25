@@ -33,6 +33,7 @@
     "query-string": "^7.0.1",
     "randomstring": "^1.2.1",
     "ua-parser-js": "^0.7.28",
+    "unique-names-generator": "^4.6.0",
     "url-parse": "^1.5.1"
   },
   "devDependencies": {
