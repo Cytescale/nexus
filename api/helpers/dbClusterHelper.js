@@ -692,12 +692,16 @@ module.exports = class DbClusterHelper{
           return helperReponse;
      }
 
-     async makeAnalyticData(lnk_id,link_type_id,base_url,analytic_type_id,visitor_ip_addr,creator_id){
+     async makeAnalyticData(lnk_id,link_type_id,base_url,analytic_type_id,visitor_ip_addr,creator_id,ua_data){
+// link_type_id  [ 1 deeplinked 2 non deeplinked 3 cluster link 4 custom page]
+// base_url   console.dir(req.baseUrl) // '/ad
+// analytic_type_id  [ 1 visit ]
           let got_data={
                link_type_id:link_type_id,
                link_id:lnk_id,
                base_url:base_url,
                analytic_type_id:analytic_type_id,
+               ua_data:ua_data,
                creator_id :creator_id,
                visitor_ip_addr :visitor_ip_addr,
           }

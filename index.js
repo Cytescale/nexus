@@ -88,6 +88,7 @@ let allowedRoutes = {
   makeSpaceData:true,
   makeLinkData:true,
   makeUserData:true,
+  makeAnalyticsData:true,
 
   updateSpaceData:true,
   updateUserData:true,
@@ -456,7 +457,7 @@ class server_entry{
       if(!resData.responseData.gotData.deeplink_bool){res.redirect(resData.responseData.gotData.link_dest);return;}
       const rd = resData.responseData.gotData;
       let ua = parser(req.headers['user-agent']); 
-      dbClusterHelper.makeAnalyticData(rd._id,rd.deeplink_bool?1:2,req.path,1,req.ip,rd.creator_id);
+      dbClusterHelper.makeAnalyticData(rd._id,rd.deeplink_bool?1:2,req.path,1,req.ip,rd.creator_id,ua);
       let redirectData  = await linkHelper.visitLinkParser(resData.responseData.gotData,ua.os.name)
       if(!redirectData.errBool){
         switch(ua.os.name)
@@ -620,7 +621,33 @@ class server_entry{
         res.send(serverReponse).status(200).end();
         next();
     })
-  
+
+    router.post('/api/makeAnalyticsData',async(req,res,next)=>{
+      TOTAL_REQUEST_COUNT++;
+      let serverReponse = null;
+      let ip=req.body.ip;
+      let link_id = req.body.link_id;
+      let creator_id = req.body.creator_id;
+      let ua = parser(req.headers['user-agent']); 
+      if(allowedRoutes.makeAnalyticsData){
+        let resData = await dbClusterHelper.makeAnalyticData(
+            link_id,
+            3,
+            req.path,
+            1,
+            ip,
+            creator_id,
+            ua
+        );
+        if(!resData.errBool){serverReponse = new nexusResponse(0,false,null,resData.responseData);}
+        else{serverReponse = new nexusResponse(10,true,resData.errMess,null);}}
+        else{serverReponse = new nexusResponse(1,true,'Route is closed',null);}
+      serverReponse.errBool?TOTAL_FAILUER_PASS++:TOTAL_SUCESS_PASS++;
+      res.send(serverReponse).status(200).end();
+      next();
+    })
+
+
   }
 
   init(){
