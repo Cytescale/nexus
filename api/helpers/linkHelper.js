@@ -6,9 +6,10 @@ const axios =                                require('axios').default;
 
 
 /*
+Analytics 
 
-https://open.spotify.com/playlist/37i9dQZF1E37q9vD8nNRdL?si=0578c92e488448da
-https://open.spotify.com/artist/1SJOL9HJ08YOn92lFcYf8a?si=wXDTz7XpRLG2ucTAess_FA&dl_branch=1
+
+
 
 */
 

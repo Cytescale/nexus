@@ -692,6 +692,36 @@ module.exports = class DbClusterHelper{
           return helperReponse;
      }
 
+     async makeAnalyticData(lnk_id,link_type_id,base_url,analytic_type_id,visitor_ip_addr,creator_id){
+          let got_data={
+               link_type_id:link_type_id,
+               link_id:lnk_id,
+               base_url:base_url,
+               analytic_type_id:analytic_type_id,
+               creator_id :creator_id,
+               visitor_ip_addr :visitor_ip_addr,
+          }
+          let helperReponse = null;
+          try{  
+               if(this.getClient()){
+                    if( got_data){
+                    got_data.creation_timestamp  = Date.now();
+                     const collection = this.getClient().db('central_db').collection("analyitcs_pool"); 
+                     let result = await collection.insertOne(got_data);
+                     if(result.insertedCount==1){
+                         helperReponse = new nexusResponse(0,false,null,
+                         {data_insert:true},
+                         {funcName:'makeAnalyticData',logMess:'data make success'});
+                     }
+                    else{throw new Error('data insert failure');}
+                    }else{throw new Error('Missing uid|data')}
+                    }else{throw new Error('No client')}
+          }
+          catch(e){
+                    helperReponse = new nexusResponse(1,true,e.message,null,{funcName:'makeAnalyticData',logMess:'data make failure'});
+          }
+          return helperReponse;
+     }
      
    }
 
