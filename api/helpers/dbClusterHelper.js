@@ -410,6 +410,32 @@ module.exports = class DbClusterHelper{
           }
           return helperReponse;
      }
+
+     async getLinkCountData(got_uid,link_id){
+          let helperReponse = null;
+          try{
+                    if(got_uid && link_id){
+                         const collection = this.getClient().db('central_db').collection("analyitcs_pool").find({'link_id':ObjectId(link_id)}); 
+                         let data = await collection.toArray();
+                         if(data.length>0)
+                         {
+                              let tempFeedData = [];
+                              await collection.forEach(e => {
+                                   if(!e.ban_bool  && !e.deleted_bool){
+                                        tempFeedData.push(e);
+                                   }
+                              });
+                              helperReponse = new nexusResponse(0,false,null,{count:data.length},{funcName:'getLinkCountData',logMess:'data extraction sucess'});
+                         }
+                         else{throw new Error('No data');}
+                    }
+                    else{throw new Error('No uid');}
+          }
+          catch(e){
+               helperReponse = new nexusResponse(1,true,e.message,null,{funcName:'getLinkCountData',logMess:'data extraction failure'});
+          }
+          return helperReponse;
+     }
      async updateLinkInfo(got_uid,linkId,got_data){
           let uniKeyChangeBool = false;
           let alloweduniKeyChangeBool = true;

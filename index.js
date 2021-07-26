@@ -95,6 +95,7 @@ let allowedRoutes = {
   updateLinkData:true,
   updateClusterConfigData:true,
 
+  getLinkCountData:true,
   getFollowCount:true,
   getSpaceDatabySid:true,
   getSpaceFeedData:true,
@@ -335,7 +336,7 @@ class server_entry{
       if(allowedRoutes.makeSpaceData){
       if(got_uid && space_data){
         let resData = await dbClusterHelper.makeSpaceData(got_uid,space_data);
-        console.log(resData.responseData);
+        // console.log(resData.responseData);
         if(!resData.errBool){serverReponse = new nexusResponse(0,false,null,resData.responseData);}
         else{serverReponse = new nexusResponse(10,true,resData.errMess,null);}}
         else{serverReponse = new nexusResponse(2,true,'Missing Data',null);}}
@@ -533,6 +534,23 @@ class server_entry{
       res.send(serverReponse).status(200).end();
       next();
     })
+    router.post('/api/getLinkCountData',async (req,res,next)=>{
+      TOTAL_REQUEST_COUNT++;
+      let uid=req.body.uid;
+      let link_id =req.body.link_id;
+      console.log(link_id);
+      let serverReponse = null;
+      if(allowedRoutes.getLinkCountData){
+        if(uid && link_id){
+        let resData = await dbClusterHelper.getLinkCountData(uid,link_id);
+        if(!resData.errBool){serverReponse = new nexusResponse(0,false,null,resData.responseData);}
+        else{serverReponse = new nexusResponse(10,true,resData.errMess,null);}}
+        else{serverReponse = new nexusResponse(2,true,'Missing Data',null);}}
+       else{serverReponse = new nexusResponse(1,true,'Route is closed',null);}
+      serverReponse.errBool?TOTAL_FAILUER_PASS++:TOTAL_SUCESS_PASS++;
+      res.send(serverReponse).status(200).end();
+      next();
+    })
     router.post('/api/updateClusterConfigData',async (req,res,next)=>{
       TOTAL_REQUEST_COUNT++;
       let uid=req.body.uid;
@@ -621,7 +639,7 @@ class server_entry{
         res.send(serverReponse).status(200).end();
         next();
     })
-
+    
     router.post('/api/makeAnalyticsData',async(req,res,next)=>{
       TOTAL_REQUEST_COUNT++;
       let serverReponse = null;
