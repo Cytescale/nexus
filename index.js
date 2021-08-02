@@ -71,7 +71,7 @@ const client = new MongoClient(mongo_uri,
   
 
   /*/////////////SERVER VARSs ////////////*/
-const SERVER_VERSION = "1.0.0";
+const SERVER_VERSION = "1.3";
 var SERVER_STATUS = "RUNNING";
 var TOTAL_REQUEST_COUNT = 0;
 var TOTAL_SUCESS_PASS = 0;
@@ -538,7 +538,6 @@ class server_entry{
       TOTAL_REQUEST_COUNT++;
       let uid=req.body.uid;
       let link_id =req.body.link_id;
-      console.log(link_id);
       let serverReponse = null;
       if(allowedRoutes.getLinkCountData){
         if(uid && link_id){

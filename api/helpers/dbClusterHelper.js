@@ -244,8 +244,10 @@ module.exports = class DbClusterHelper{
           try{  
             let foundData  = null;
             if(this.getClient()){
+                 console.log(unique_identifier);
                   const collection = this.getClient().db('central_db').collection("link_collec").find({'unique_identifier':unique_identifier}); 
                   let data = await collection.toArray();
+                  console.log(data);
                     if(data.length==1){
                       foundData = {gotData:data[0]}
                       helperReponse = new nexusResponse(0,false,null,foundData,{funcName:'getLinkDataByUnique',logMess:'data extraction success'});
@@ -681,14 +683,14 @@ module.exports = class DbClusterHelper{
                uid:got_uid,
                email:got_eml,
                login_method:login_method,
-               dname:'null',
+               dname:'',
                admin_bool:false,
-               cname:'null',
+               cname:'',
                init_bool:false,
                uname:randomName,
                pro_bool:false,
                deleted_bool:false,
-               bio:'null',
+               bio:'',
                api_key:api_key,
                pvt_bool:false,
                pro_photo_url:"https://ik.imagekit.io/cyte/sakura/Men-Profile-Image_8c3Wj4y8S.png?updatedAt=1626883535964",
