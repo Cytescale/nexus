@@ -591,7 +591,8 @@ module.exports = class LinkHelper{
                     const val = await this.visitLinkdLinkParser(visit_parse_url);
                     console.log(visit_parse_url);
                     iosLink = `linkedin://${val.actionType}/${val.actionId}`;
-                    androidLink=`intent://${linkData.link_dest}/#Intent;package=com.linkedin.android;scheme=https;end`
+                    androidLink=`intent://www.linkedin.com${visit_parse_url.pathname}/#Intent;package=com.linkedin.android;scheme=https;end`;
+                    console.log(androidLink);
                     helperReponse = new nexusResponse(0,false,null,
                          {iosLink:iosLink,androidLink:androidLink}
                          ,{funcName:'visitLinkParser',logMess:'URL parsing Failure'});

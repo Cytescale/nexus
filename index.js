@@ -79,7 +79,6 @@ var TOTAL_FAILUER_PASS = 0;
 
 /*/////////////////////////////////////////*/
 
-//intent://www.youtube.com/watch?v=N9PMmDPO-8U#Intent;package=com.google.android.youtube;scheme=https;end
 
 
 let allowedRoutes = {
