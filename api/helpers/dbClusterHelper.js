@@ -676,6 +676,31 @@ module.exports = class DbClusterHelper{
           }
           return helperReponse;
      }
+     async getClusterAnalyticsData(got_uid){
+          let helperReponse = null;
+          try{  
+          if(this.getClient()){
+               if(got_uid){     
+                         const collection = this.getClient().db('central_db')
+                         .collection("analyitcs_pool")
+                         .find({'creator_id':got_uid,'analytic_type_id':1,'link_type_id':3})
+                         .sort({'creation_timestamp':-1})
+                         ; 
+                         let data = await collection.toArray();
+                         if(data.length>0){
+                              helperReponse = new nexusResponse(0,false,null,{clusterAnalyticsData:data,count:data.length},{funcName:'getClusterAnalyticsData',logMess:'data extraction success'});
+                         }
+                         else{throw new Error('No data')}
+               }
+               else{throw new Error('No Uid')}
+          }
+         else{throw new Error('No Client');}
+         }
+           catch(e){
+               helperReponse = new nexusResponse(1,true,e.message,null,{funcName:'getClusterAnalyticsData',logMess:'data extraction failure'});
+          }
+          return helperReponse;
+     }
      async makeUserData(got_uid,got_eml,login_method,userToken){
           const api_key = randomstring.generate({length:32,charset: 'alphabetic'});
           const randomName = uniqueNamesGenerator({ dictionaries: [adjectives,starWars] ,style: 'lowerCase'}); 

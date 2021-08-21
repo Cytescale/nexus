@@ -61,7 +61,6 @@ const VALID_INSTA_PATHNAMES=[
      'tag',
      'reel'
 ]
-
 const VALID_SPOTI_PATHNAMES=[
      'album',
      'artist',     
@@ -466,7 +465,7 @@ module.exports = class LinkHelper{
                     iosLink = `vnd.youtube://www.youtube.com/${val.actionType}/${val.actionId}`;
                     helperReponse = new nexusResponse(0,false,null,
                          {iosLink:iosLink,androidLink:androidLink}
-                         ,{funcName:'visitLinkParser',logMess:'URL parsing Failure'});
+                         ,{funcName:'visitLinkParser',logMess:'URL parsing success'});
                     break;
                }
                case 2:{
@@ -504,7 +503,7 @@ module.exports = class LinkHelper{
                     }
                     helperReponse = new nexusResponse(0,false,null,
                          {iosLink:iosLink,androidLink:androidLink}
-                         ,{funcName:'visitLinkParser',logMess:'URL parsing Failure'});
+                         ,{funcName:'visitLinkParser',logMess:'URL parsing success'});
                     break;
                }
                case 3:{
@@ -528,7 +527,7 @@ module.exports = class LinkHelper{
 
                     helperReponse = new nexusResponse(0,false,null,
                          {iosLink:iosLink,androidLink:androidLink}
-                         ,{funcName:'visitLinkParser',logMess:'URL parsing Failure'});
+                         ,{funcName:'visitLinkParser',logMess:'URL parsing success'});
                     break;
                }  
                case 4:{
@@ -553,7 +552,7 @@ module.exports = class LinkHelper{
                     console.log(androidLink);
                     helperReponse = new nexusResponse(0,false,null,
                          {iosLink:iosLink,androidLink:androidLink}
-                         ,{funcName:'visitLinkParser',logMess:'URL parsing Failure'});
+                         ,{funcName:'visitLinkParser',logMess:'URL parsing success'});
                     break;
                }   
                case 5:{
@@ -583,7 +582,7 @@ module.exports = class LinkHelper{
                     console.log(androidLink);
                     helperReponse = new nexusResponse(0,false,null,
                          {iosLink:iosLink,androidLink:androidLink}
-                         ,{funcName:'visitLinkParser',logMess:'URL parsing Failure'});
+                         ,{funcName:'visitLinkParser',logMess:'URL parsing success'});
                     break;
                }
                case 6:{
@@ -592,10 +591,9 @@ module.exports = class LinkHelper{
                     console.log(visit_parse_url);
                     iosLink = `linkedin://${val.actionType}/${val.actionId}`;
                     androidLink=`intent://www.linkedin.com${visit_parse_url.pathname}/#Intent;package=com.linkedin.android;scheme=https;end`;
-                    console.log(androidLink);
                     helperReponse = new nexusResponse(0,false,null,
                          {iosLink:iosLink,androidLink:androidLink}
-                         ,{funcName:'visitLinkParser',logMess:'URL parsing Failure'});
+                         ,{funcName:'visitLinkParser',logMess:'URL parsing success'});
                     break;
                }
                default:{

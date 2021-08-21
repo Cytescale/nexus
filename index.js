@@ -34,7 +34,7 @@ const imagekit = new ImageKit({
 });  
 
 log4js.configure({
-  appenders: { everything: { type: 'file',filename: "./logs/overall_server_4.log" } },
+  appenders: { everything: { type: 'file',filename: "./logs/overall_server_5.log" } },
   categories: { default: { appenders: [ 'everything' ], level: 'debug' } }
 });
 
@@ -106,6 +106,8 @@ let allowedRoutes = {
   getLinkDatabyUniId:true,
   getLinksDatabyId:true,
   getClusterConfigbyUid:true,
+  getClusterAnalyticsData:true,
+
 
   buildClusterLinkArray:true,
   
@@ -662,6 +664,22 @@ class server_entry{
       res.send(serverReponse).status(200).end();
       next();
     })
+
+    router.post('/api/getClusterAnalyticsData',async(req,res,next)=>{
+      TOTAL_REQUEST_COUNT++;
+      let serverReponse = null;
+      let uid = req.body.uid;
+      if(allowedRoutes.getClusterAnalyticsData){
+        let resData = await dbClusterHelper.getClusterAnalyticsData(uid);
+        if(!resData.errBool){serverReponse = new nexusResponse(0,false,null,resData.responseData);}
+        else{serverReponse = new nexusResponse(10,true,resData.errMess,null);}}
+        else{serverReponse = new nexusResponse(1,true,'Route is closed',null);}
+      serverReponse.errBool?TOTAL_FAILUER_PASS++:TOTAL_SUCESS_PASS++;
+      res.send(serverReponse).status(200).end();
+      next();
+    })
+
+
 
 
   }
