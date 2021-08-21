@@ -6,9 +6,21 @@ const axios =                                require('axios').default;
 
 
 /*
-Analytics 
 
 
+https://www.linkedin.com/company/<company>
+https://www.linkedin.com/jobs/search/?currentJobId=2690142401&pivotType=jymbii
+https://www.linkedin.com/in/<profile>
+https://www.linkedin.com/posts/surabhi-capoor-b8061a100_launched-cred-mint-our-first-community-ugcPost-6834770325599846400-YjPA
+https://www.linkedin.com/jobs/view/2690142401
+
+linkedin://in/janhvi-shinde-3a9b65209/
+linkedin://posts/surabhi-capoor-b8061a100_launched-cred-mint-our-first-community-ugcPost-6834770325599846400-YjPA
+linkedin://company/google
+linkedin://jobs/search/?currentJobId=2690142401&pivotType=jymbii&currentJobId=2690142401&pivotType=jymbii
+
+
+intent://www.linkedin.com/in/janhvi-shinde-3a9b65209/#Intent;package=com.linkedin.android;scheme=https;end
 
 
 */
@@ -21,6 +33,7 @@ Analytics
                TWITTER 3
                PINTREST 4
                SPOTIFY 5
+               LINKDIN 6
      
 */
 
@@ -57,6 +70,12 @@ const VALID_SPOTI_PATHNAMES=[
      'track',
      'episode',
 ]
+const VALID_LINKD_PATHNAMES=[
+     'company',
+     'jobs',     
+     'in',
+     'posts',
+]
 
 
 const VALID_TWIT_DOMAINS=[
@@ -88,6 +107,11 @@ const VALID_PINTR_DOMAINS=[
 const VALID_SPOTI_DOMAINS=[
      'open.spotify.com',
 ]
+const VALID_LINKD_DOMAINS=[
+     'www.linkedin.com',
+     'linkedin.com'
+]
+
 
 
 const VALID_DOMAINS = [
@@ -95,7 +119,8 @@ const VALID_DOMAINS = [
      VALID_INSTA_DOMAINS,
      VALID_TWIT_DOMAINS,
      VALID_PINTR_DOMAINS,
-     VALID_SPOTI_DOMAINS
+     VALID_SPOTI_DOMAINS,
+     VALID_LINKD_DOMAINS
 ]
 
 module.exports = class LinkHelper{
@@ -248,6 +273,73 @@ module.exports = class LinkHelper{
                                    actionType='p2';
                                    actionId=path;
                               }
+                              break;
+                         }      
+                    }
+                  break;
+               }
+               default:{
+               
+                    break;
+               }
+          }
+          return{
+               actionType:actionType,
+               actionId:actionId
+          }
+          
+     }
+     async visitLinkdLinkParser(visit_parse_url){
+          const path  = visit_parse_url.pathname.split("/")[1];
+          let identified_domain_id = null;
+          let actionType = null;
+          let actionId = null;
+          for(let j = 0 ; j < VALID_LINKD_DOMAINS.length; j++){
+               if(VALID_LINKD_DOMAINS[j]==visit_parse_url.hostname){
+                    identified_domain_id = j;
+                    break;
+               }
+          }
+          switch(identified_domain_id){
+               case 0:
+               case 1:{
+                    const query = queryString.parse(visit_parse_url.query)
+                    let fi = null;
+                    for(let i = 0 ;i < VALID_LINKD_PATHNAMES.length;i++){
+                         if(path==VALID_LINKD_PATHNAMES[i]){fi=i;}
+                    }   
+                    switch(fi){
+                         case 0:{
+                              actionType='company';
+                              actionId=visit_parse_url.pathname.split("/")[2];
+                              break;
+                         }
+                         case 2:{
+                              actionType='in';
+                              actionId=visit_parse_url.pathname.split("/")[2];
+                              break;
+                         }
+                         case 3:{
+                              actionType='posts';
+                              actionId=visit_parse_url.pathname.split("/")[2];
+                              break;
+                         }
+                         case 1:{
+                              actionType = 'jobs'
+                              switch(visit_parse_url.pathname.split("/")[2]){
+                                   case 'view':{  
+                                        actionId='view/'+visit_parse_url.pathname.split("/")[3];
+                                        break;
+                                   }
+                                   case 'search':{
+                                        actionId='search/'+visit_parse_url.query;
+                                        break;
+                                   }
+                              }
+                              break;
+                         }
+                         default:{
+                              
                               break;
                          }      
                     }
@@ -489,6 +581,17 @@ module.exports = class LinkHelper{
                     }
                     console.log(iosLink);
                     console.log(androidLink);
+                    helperReponse = new nexusResponse(0,false,null,
+                         {iosLink:iosLink,androidLink:androidLink}
+                         ,{funcName:'visitLinkParser',logMess:'URL parsing Failure'});
+                    break;
+               }
+               case 6:{
+                    let visit_parse_url = new URLParser(linkData.link_dest);
+                    const val = await this.visitLinkdLinkParser(visit_parse_url);
+                    console.log(visit_parse_url);
+                    iosLink = `linkedin://${val.actionType}/${val.actionId}`;
+                    androidLink=`intent://${linkData.link_dest}/#Intent;package=com.linkedin.android;scheme=https;end`
                     helperReponse = new nexusResponse(0,false,null,
                          {iosLink:iosLink,androidLink:androidLink}
                          ,{funcName:'visitLinkParser',logMess:'URL parsing Failure'});
