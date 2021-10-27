@@ -719,7 +719,7 @@ module.exports = class DbClusterHelper{
                api_key:api_key,
                pvt_bool:false,
                pro_photo_url:"https://ik.imagekit.io/cyte/sakura/Men-Profile-Image_8c3Wj4y8S.png?updatedAt=1626883535964",
-               acc_verified:false,    
+               acc_verified:true,    
           }
           let helperReponse = null;
           try{  
